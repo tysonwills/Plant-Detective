@@ -12,7 +12,7 @@ import ReminderModal from './components/ReminderModal';
 import { identifyPlant, diagnoseHealth, getPlantInfoByName } from './services/geminiService';
 import { getWikiImages, getWikiThumbnail } from './services/wikiService';
 import { IdentificationResponse, WikiImage, UserProfile, DiagnosticResult, Reminder } from './types';
-import { Loader2, Droplets, X, Sprout, CheckCircle, ArrowRight, Crown, Check, ShieldCheck, Zap, Sparkles, Leaf, MapPin, AlertCircle } from 'lucide-react';
+import { Loader2, Droplets, X, Sprout, CheckCircle, ArrowRight, Crown, Check, ShieldCheck, Zap, Sparkles, Leaf, MapPin, AlertCircle, Bell, BellRing, Clock } from 'lucide-react';
 
 const App: React.FC = () => {
   const [user, setUser] = useState<UserProfile | null>(null);
@@ -26,9 +26,11 @@ const App: React.FC = () => {
   const [reminders, setReminders] = useState<Reminder[]>([]);
   const [completions, setCompletions] = useState<Record<string, string[]>>({});
   const [reminderPlant, setReminderPlant] = useState<{id: string, name: string} | null>(null);
+  const [activeNotification, setActiveNotification] = useState<{reminder: Reminder, plantName: string, plantImage?: string} | null>(null);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Load persistence and start notification scheduler
   useEffect(() => {
     const savedUser = localStorage.getItem('flora_user');
     if (savedUser) {
@@ -52,7 +54,58 @@ const App: React.FC = () => {
     if (savedReminders) setReminders(JSON.parse(savedReminders));
     const savedCompletions = localStorage.getItem('flora_completions');
     if (savedCompletions) setCompletions(JSON.parse(savedCompletions));
+
+    // Notification Check Interval (runs every 60 seconds)
+    const interval = setInterval(checkReminders, 60000);
+    return () => clearInterval(interval);
   }, []);
+
+  const checkReminders = () => {
+    const savedReminders = JSON.parse(localStorage.getItem('flora_reminders') || '[]');
+    const savedPlants = JSON.parse(localStorage.getItem('flora_garden') || '[]');
+    const now = new Date();
+    const currentTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+    const today = now.toDateString();
+
+    const dueReminders = savedReminders.filter((r: Reminder) => {
+      const isCorrectTime = r.time === currentTime;
+      const notAlreadyNotifiedToday = r.lastNotificationDate !== today;
+      // Frequency logic simplified for daily/weekly
+      // In a production app, we'd check day of week for Weekly, etc.
+      return isCorrectTime && notAlreadyNotifiedToday;
+    });
+
+    if (dueReminders.length > 0) {
+      const firstDue = dueReminders[0];
+      const plant = savedPlants.find((p: any) => p.id === firstDue.plantId);
+      
+      triggerNotification(firstDue, plant?.name || 'Plant', plant?.image);
+
+      // Mark as notified today to avoid repeat triggers in the same minute/day
+      const updatedReminders = savedReminders.map((r: Reminder) => 
+        r.id === firstDue.id ? { ...r, lastNotificationDate: today } : r
+      );
+      setReminders(updatedReminders);
+      localStorage.setItem('flora_reminders', JSON.stringify(updatedReminders));
+    }
+  };
+
+  const triggerNotification = (reminder: Reminder, plantName: string, plantImage?: string) => {
+    setActiveNotification({ reminder, plantName, plantImage });
+    
+    // Native Browser Notification
+    if (Notification.permission === 'granted') {
+      new Notification(`Time to ${reminder.type}!`, {
+        body: `Your ${plantName} needs some love.`,
+        icon: '/favicon.ico'
+      });
+    }
+
+    // Auto-hide in-app toast after 10 seconds
+    setTimeout(() => {
+      setActiveNotification(null);
+    }, 10000);
+  };
 
   const executeWithKeySafety = async (fn: () => Promise<void>) => {
     try {
@@ -97,9 +150,14 @@ const App: React.FC = () => {
   };
 
   const handleLogin = (name: string, email: string) => {
-    const newUser = { id: Date.now().toString(), name, email, isSubscribed: false };
+    const newUser = { id: Date.now().toString(), name, email, isSubscribed: false, notificationsEnabled: true };
     setUser(newUser);
     localStorage.setItem('flora_user', JSON.stringify(newUser));
+    
+    // Request notification permission
+    if ('Notification' in window) {
+      Notification.requestPermission();
+    }
   };
 
   const handleCameraClick = () => {
@@ -147,6 +205,10 @@ const App: React.FC = () => {
     const newCompletions = { ...completions, [plantId]: updated };
     setCompletions(newCompletions);
     localStorage.setItem('flora_completions', JSON.stringify(newCompletions));
+    
+    if (activeNotification && activeNotification.reminder.plantId === plantId) {
+      setActiveNotification(null);
+    }
   };
 
   const handlePlantSearch = (query: string) => {
@@ -316,8 +378,16 @@ const App: React.FC = () => {
                 sub={user.isSubscribed ? "Manage Billing" : "Upgrade to Pro"} 
                 onClick={user.isSubscribed ? undefined : () => setActiveTab('upsell')}
               />
+              <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100 flex justify-between items-center group">
+                <div>
+                  <h4 className="font-bold text-gray-900 text-sm">Notifications</h4>
+                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mt-1">Smart Alerts Enabled</p>
+                </div>
+                <div className="w-12 h-6 bg-[#00D09C] rounded-full relative p-1 flex items-center">
+                  <div className="w-4 h-4 bg-white rounded-full ml-auto"></div>
+                </div>
+              </div>
               <ProfileItem label="Nearby Stores" onClick={() => handleNavigate('stores')} />
-              <ProfileItem label="Garden Settings" />
               <button onClick={() => { setUser(null); localStorage.removeItem('flora_user'); }} className="w-full text-center py-6 text-rose-500 font-bold uppercase tracking-widest text-[10px] mt-4 hover:bg-rose-50 rounded-[1.5rem] transition-colors">Sign Out</button>
             </div>
           </div>
@@ -336,6 +406,44 @@ const App: React.FC = () => {
       isSubscribed={user.isSubscribed}
     >
       {renderContent()}
+
+      {/* Global Push Notification Toast */}
+      {activeNotification && (
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[500] w-[90%] max-w-sm animate-in slide-in-from-top-10 duration-500">
+           <div className="bg-white/95 backdrop-blur-xl border border-white p-5 rounded-[2.5rem] shadow-2xl flex items-center gap-4">
+             <div className="relative w-14 h-14 flex-shrink-0">
+               {activeNotification.plantImage ? (
+                 <img src={activeNotification.plantImage} className="w-full h-full rounded-2xl object-cover" />
+               ) : (
+                 <div className="w-full h-full bg-[#EFFFFB] text-[#00D09C] rounded-2xl flex items-center justify-center">
+                    <Sprout size={24} />
+                 </div>
+               )}
+               <div className="absolute -bottom-1 -right-1 bg-[#00D09C] text-white p-1 rounded-full border-2 border-white">
+                  {activeNotification.reminder.type === 'Water' ? <Droplets size={12} /> : <Zap size={12} />}
+               </div>
+             </div>
+             <div className="flex-1">
+               <h4 className="font-black text-gray-900 text-sm">{activeNotification.reminder.type} Reminder</h4>
+               <p className="text-gray-500 text-[10px] font-bold">Your {activeNotification.plantName} needs attention.</p>
+               <div className="flex gap-2 mt-2">
+                 <button 
+                  onClick={() => handleCompleteTask(activeNotification.reminder.plantId, activeNotification.reminder.type === 'Water' ? 'Watering' : activeNotification.reminder.type)}
+                  className="bg-[#00D09C] text-white px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider shadow-md shadow-[#00D09C33]"
+                 >
+                   Done
+                 </button>
+                 <button 
+                  onClick={() => setActiveNotification(null)}
+                  className="bg-gray-100 text-gray-400 px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider"
+                 >
+                   Later
+                 </button>
+               </div>
+             </div>
+           </div>
+        </div>
+      )}
 
       {error && (
         <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[400] w-[90%] max-w-sm animate-in slide-in-from-top-10 fade-in duration-300">

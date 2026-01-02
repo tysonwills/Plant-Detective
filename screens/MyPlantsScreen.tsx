@@ -1,6 +1,6 @@
 
-import React, { useState } from 'react';
-import { Leaf, Droplets, Plus, Camera, Bell, Calendar, ChevronRight, Trash2, X, AlertCircle, Search } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Leaf, Droplets, Plus, Camera, Bell, BellOff, Calendar, ChevronRight, Trash2, X, AlertCircle, Search } from 'lucide-react';
 import { Reminder } from '../types';
 
 interface MyPlantsScreenProps {
@@ -14,6 +14,13 @@ interface MyPlantsScreenProps {
 
 const MyPlantsScreen: React.FC<MyPlantsScreenProps> = ({ plants, reminders, onAddClick, onManageReminders, onPlantClick, onRemovePlant }) => {
   const [confirmDelete, setConfirmDelete] = useState<any | null>(null);
+  const [notificationPermission, setNotificationPermission] = useState<string>('default');
+
+  useEffect(() => {
+    if ('Notification' in window) {
+      setNotificationPermission(Notification.permission);
+    }
+  }, []);
 
   const handleDeleteRequest = (e: React.MouseEvent, plant: any) => {
     e.stopPropagation();
@@ -27,11 +34,26 @@ const MyPlantsScreen: React.FC<MyPlantsScreenProps> = ({ plants, reminders, onAd
     }
   };
 
+  const requestPermission = async () => {
+    const res = await Notification.requestPermission();
+    setNotificationPermission(res);
+  };
+
   return (
     <div className="px-6 pt-4 pb-24 relative min-h-full">
-      <div className="mb-8">
-        <h2 className="text-2xl font-bold text-gray-900 leading-tight">My Garden</h2>
-        <p className="text-gray-500 font-medium text-sm">{plants.length} species thriving</p>
+      <div className="mb-8 flex justify-between items-end">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900 leading-tight">My Garden</h2>
+          <p className="text-gray-500 font-medium text-sm">{plants.length} species thriving</p>
+        </div>
+        {notificationPermission !== 'granted' && reminders.length > 0 && (
+          <button 
+            onClick={requestPermission}
+            className="bg-amber-50 text-amber-600 p-2.5 rounded-2xl animate-pulse"
+          >
+            <BellOff size={18} />
+          </button>
+        )}
       </div>
 
       {/* Add New Plant Card */}
@@ -128,16 +150,6 @@ const MyPlantsScreen: React.FC<MyPlantsScreenProps> = ({ plants, reminders, onAd
         </button>
       )}
 
-      {plants.length === 0 && (
-        <div className="flex flex-col items-center justify-center py-10 opacity-40">
-           <div className="bg-gray-100 p-8 rounded-full mb-4">
-             <Leaf size={48} className="text-gray-300" />
-           </div>
-           <p className="font-bold text-gray-400">Your garden is empty</p>
-           <p className="text-xs text-gray-400">Time to plant some seeds!</p>
-        </div>
-      )}
-
       {/* Confirmation Modal Overlay */}
       {confirmDelete && (
         <div className="fixed inset-0 z-[100] bg-black/40 backdrop-blur-sm flex items-center justify-center p-6 animate-in fade-in duration-300">
@@ -149,7 +161,6 @@ const MyPlantsScreen: React.FC<MyPlantsScreenProps> = ({ plants, reminders, onAd
             <h2 className="text-2xl font-bold text-gray-900 mb-2">Remove Plant?</h2>
             <p className="text-gray-500 text-sm leading-relaxed mb-8">
               Are you sure you want to remove <span className="font-bold text-gray-900">{confirmDelete.name}</span>? 
-              This will permanently delete all care history and active reminders.
             </p>
 
             <div className="flex flex-col gap-3">

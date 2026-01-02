@@ -46,6 +46,7 @@ export interface Reminder {
   frequency: 'Daily' | 'Weekly' | 'Bi-weekly' | 'Monthly';
   time: string;
   lastCompleted?: string;
+  lastNotificationDate?: string; // Tracks the last time a notification was sent
 }
 
 export interface DiagnosticResult {
@@ -68,6 +69,7 @@ export interface UserProfile {
   name: string;
   email: string;
   isSubscribed: boolean;
+  notificationsEnabled?: boolean;
 }
 
 export interface GardenCenter {

@@ -27,7 +27,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
         <div className="bg-white/20 backdrop-blur-md p-6 rounded-[3rem] mb-6 shadow-2xl border border-white/30">
           <Sprout size={64} className="text-white" />
         </div>
-        <h1 className="text-4xl font-bold mb-2">FloraID</h1>
+        <h1 className="text-4xl font-bold mb-2 tracking-tight">FloraID</h1>
         <p className="text-white/80 font-medium">Your companion in the botanical world</p>
       </div>
 
@@ -56,7 +56,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
                 required
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full bg-gray-50 border-none py-4 px-6 rounded-3xl text-sm focus:ring-2 focus:ring-[#00D09C] transition-shadow"
+                className="w-full bg-gray-50 border-none py-4 px-6 rounded-3xl text-sm text-gray-900 font-bold placeholder-gray-400 focus:ring-2 focus:ring-[#00D09C] transition-shadow outline-none"
               />
             </div>
           )}
@@ -69,7 +69,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-gray-50 border-none py-4 pl-12 pr-6 rounded-3xl text-sm focus:ring-2 focus:ring-[#00D09C] transition-shadow"
+              className="w-full bg-gray-50 border-none py-4 pl-12 pr-6 rounded-3xl text-sm text-gray-900 font-bold placeholder-gray-400 focus:ring-2 focus:ring-[#00D09C] transition-shadow outline-none"
             />
           </div>
 
@@ -81,7 +81,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-gray-50 border-none py-4 pl-12 pr-6 rounded-3xl text-sm focus:ring-2 focus:ring-[#00D09C] transition-shadow"
+              className="w-full bg-gray-50 border-none py-4 pl-12 pr-6 rounded-3xl text-sm text-gray-900 font-bold placeholder-gray-400 focus:ring-2 focus:ring-[#00D09C] transition-shadow outline-none"
             />
           </div>
 
@@ -103,8 +103,8 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
         <div className="mt-8 pt-6 border-t border-gray-100 flex items-center justify-center gap-4">
            <span className="text-xs text-gray-400 font-medium">Or join with</span>
            <div className="flex gap-4">
-             <button className="w-10 h-10 bg-gray-50 rounded-full flex items-center justify-center text-gray-400 hover:bg-gray-100 transition-colors">G</button>
-             <button className="w-10 h-10 bg-gray-50 rounded-full flex items-center justify-center text-gray-400 hover:bg-gray-100 transition-colors">F</button>
+             <button className="w-10 h-10 bg-gray-50 rounded-full flex items-center justify-center text-gray-900 font-black hover:bg-gray-100 transition-colors">G</button>
+             <button className="w-10 h-10 bg-gray-50 rounded-full flex items-center justify-center text-gray-900 font-black hover:bg-gray-100 transition-colors">F</button>
            </div>
         </div>
       </div>

@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { ChevronLeft, Droplets, Sun, Sprout, ShieldAlert, ExternalLink, Heart, Share2, Info, Lightbulb, CheckCircle, Leaf, Plus, Check, ChevronRight, Thermometer, AlertCircle, Sparkles, MapPin, ShoppingBag, Camera, X, RefreshCw } from 'lucide-react';
+import { ChevronLeft, Droplets, Sun, Sprout, ShieldAlert, Heart, Share2, Info, Lightbulb, CheckCircle, Leaf, Plus, Check, ChevronRight, Thermometer, AlertCircle, Sparkles, MapPin, ShoppingBag, Camera, X, RefreshCw, Bell, Clock, Shovel } from 'lucide-react';
 import { IdentificationResponse, WikiImage, Reminder } from '../types';
 
 interface PlantResultScreenProps {
@@ -106,6 +106,62 @@ const PlantResultScreen: React.FC<PlantResultScreenProps> = ({
           </p>
         </div>
 
+        {/* Care Schedule (Highlighted Feature Card) */}
+        {hideAddButton && (
+          <div className="mb-10 animate-in fade-in slide-in-from-bottom-4 duration-500 bg-white p-6 rounded-[3rem] border-2 border-[#00D09C] shadow-xl shadow-[#00D09C11] relative overflow-hidden group">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-[#EFFFFB] rounded-full -mr-12 -mt-12 opacity-50 group-hover:scale-125 transition-transform duration-1000"></div>
+            
+            <div className="flex justify-between items-center mb-6 relative z-10">
+              <div className="flex items-center gap-3">
+                <div className="bg-[#00D09C] p-2.5 rounded-2xl text-white shadow-md shadow-[#00D09C33]">
+                  <Bell size={20} fill="currentColor" fillOpacity={0.2} />
+                </div>
+                <div>
+                  <h2 className="text-xl font-black text-gray-900">Care Plan</h2>
+                  <p className="text-[10px] font-bold text-[#00D09C] uppercase tracking-[0.2em]">Automated Alerts</p>
+                </div>
+              </div>
+              <button 
+                onClick={onAddReminder}
+                className="bg-[#00D09C] text-white p-2.5 rounded-2xl active:scale-90 transition-transform shadow-lg shadow-[#00D09C33]"
+              >
+                <Plus size={20} strokeWidth={3} />
+              </button>
+            </div>
+            
+            <div className="space-y-3 relative z-10">
+              {reminders.length > 0 ? (
+                reminders.map((reminder) => (
+                  <div key={reminder.id} className="bg-[#F8FAFB] p-4 rounded-[2rem] border border-gray-100 flex items-center justify-between group/item active:bg-[#EFFFFB] transition-colors">
+                    <div className="flex items-center gap-4">
+                      <div className="bg-white p-3 rounded-2xl text-[#00D09C] shadow-sm">
+                        {reminder.type === 'Water' ? <Droplets size={18} /> : <Clock size={18} />}
+                      </div>
+                      <div>
+                        <p className="font-bold text-gray-900 text-sm">{reminder.type}</p>
+                        <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">{reminder.frequency} at {reminder.time}</p>
+                      </div>
+                    </div>
+                    <div className="bg-white text-[#00D09C] p-2 rounded-xl shadow-sm border border-emerald-50">
+                      <Check size={16} strokeWidth={3} />
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="bg-[#F8FAFB] p-8 rounded-[2.5rem] border border-dashed border-gray-200 text-center">
+                  <p className="text-gray-400 text-[11px] font-bold uppercase tracking-widest mb-4">No active reminders</p>
+                  <button 
+                    onClick={onAddReminder}
+                    className="bg-white text-[#00D09C] px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-sm border border-emerald-50"
+                  >
+                    Setup Schedule
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Light Level Checker Section */}
         <div className="mb-10 bg-white p-8 rounded-[3rem] shadow-sm border border-gray-100 relative overflow-hidden group">
            <div className="absolute top-0 right-0 w-32 h-32 bg-amber-50 rounded-full -mr-16 -mt-16 opacity-50 group-hover:scale-110 transition-transform duration-700"></div>
@@ -179,7 +235,7 @@ const PlantResultScreen: React.FC<PlantResultScreenProps> = ({
             />
             <CareDetailCard 
               icon={<Sprout size={22} />} 
-              title="Foundation" 
+              title="Soil" 
               content={care.soil} 
               color="bg-emerald-50 text-emerald-600"
               isDone={completedTasks.includes('Foundation')}
@@ -200,21 +256,89 @@ const PlantResultScreen: React.FC<PlantResultScreenProps> = ({
           </div>
         )}
 
-        {/* Expert Care Hints Section */}
-        {care.hints && care.hints.length > 0 && (
+        {/* Recommended Soil Section */}
+        <div className="mb-10">
+          <h2 className="text-xl font-bold text-gray-900 mb-5 flex items-center gap-2">
+            <Shovel className="text-[#00D09C]" size={20} />
+            Recommended Soil
+          </h2>
+          <div className="bg-white p-7 rounded-[3rem] shadow-sm border border-emerald-50 flex gap-5 items-start">
+            <div className="bg-[#EFFFFB] p-4 rounded-[1.5rem] text-[#00D09C]">
+              <Sprout size={24} />
+            </div>
+            <div>
+              <p className="text-gray-600 text-sm leading-relaxed font-medium">
+                {care.soil}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Common Problems & Solutions Section */}
+        {commonProblems.length > 0 && (
           <div className="mb-10">
             <h2 className="text-xl font-bold text-gray-900 mb-5 flex items-center gap-2">
-              <Lightbulb className="text-amber-500" size={20} />
-              Expert Care Hints
+              <AlertCircle className="text-rose-500" size={20} />
+              Common Problems
             </h2>
-            <div className="grid grid-cols-1 gap-3">
-              {care.hints.map((hint, i) => (
-                <div key={i} className="bg-gradient-to-r from-amber-50 to-white p-5 rounded-[2rem] border border-amber-100/50 flex gap-4 items-start shadow-sm">
-                  <div className="bg-amber-100 p-2 rounded-xl mt-0.5 text-amber-600">
-                    <Sparkles size={16} strokeWidth={2.5} />
+            <div className="space-y-4">
+              {commonProblems.map((item, i) => (
+                <div key={i} className="bg-white p-7 rounded-[3rem] border border-gray-100 shadow-sm animate-in fade-in slide-in-from-bottom-2 duration-300" style={{ animationDelay: `${i * 100}ms` }}>
+                  <div className="flex items-start gap-4 mb-4">
+                    <div className="bg-rose-50 p-2 rounded-xl text-rose-500 mt-1">
+                      <ShieldAlert size={18} />
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="font-bold text-gray-900 text-base">{item.problem}</h4>
+                    </div>
                   </div>
-                  <p className="text-sm text-amber-900 font-bold leading-relaxed">{hint}</p>
+                  <div className="bg-[#F8FAFB] p-5 rounded-[2rem] border border-gray-50 flex items-start gap-3">
+                    <div className="bg-[#00D09C] p-1.5 rounded-lg text-white mt-1">
+                      <Check size={14} strokeWidth={4} />
+                    </div>
+                    <div className="flex-1">
+                      <span className="font-bold text-[#00D09C] uppercase tracking-widest text-[9px] block mb-1">Botanist Fix</span>
+                      <p className="text-xs text-gray-600 font-medium leading-relaxed">
+                        {item.solution}
+                      </p>
+                    </div>
+                  </div>
                 </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Similar Plants Section */}
+        {similarPlants.length > 0 && (
+          <div className="mb-10">
+            <h2 className="text-xl font-bold text-gray-900 mb-5 flex items-center gap-2">
+              <Sprout className="text-[#00D09C]" size={20} />
+              Similar Species
+            </h2>
+            <div className="flex gap-4 overflow-x-auto pb-4 -mx-2 px-2 scrollbar-hide">
+              {similarPlants.map((plant, i) => (
+                <button 
+                  key={i}
+                  onClick={() => onSearchSimilar?.(plant.scientificName || plant.name)}
+                  className="flex-shrink-0 w-48 bg-white rounded-[2.5rem] overflow-hidden border border-gray-100 shadow-sm active:scale-95 transition-all text-left group"
+                >
+                  <div className="h-32 w-full bg-gray-100 relative">
+                    <img 
+                      src={plant.imageUrl || `https://picsum.photos/seed/${plant.name}/300/200`} 
+                      alt={plant.name}
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                    />
+                    <div className="absolute inset-0 bg-black/5"></div>
+                  </div>
+                  <div className="p-4">
+                    <h4 className="font-bold text-gray-900 text-sm truncate">{plant.name}</h4>
+                    <p className="text-[10px] text-[#00D09C] italic mb-2 truncate">{plant.scientificName}</p>
+                    <div className="flex items-center gap-1 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                      Explore <ChevronRight size={10} />
+                    </div>
+                  </div>
+                </button>
               ))}
             </div>
           </div>
@@ -315,7 +439,7 @@ const LightMeterModal: React.FC<LightMeterModalProps> = ({ targetLight, onClose 
         else currentLevel = 'Direct';
         setLevel(currentLevel);
 
-        // Simplified match logic
+        // Match logic based on plant's required care sunlight string
         const target = targetLight.toLowerCase();
         let targetLvl: 'Low' | 'Medium' | 'Bright' | 'Direct' = 'Medium';
         if (target.includes('direct') || target.includes('full sun')) targetLvl = 'Direct';
@@ -369,12 +493,16 @@ const LightMeterModal: React.FC<LightMeterModalProps> = ({ targetLight, onClose 
           </div>
         ) : (
           <div className="space-y-6">
-             <div className="relative aspect-square rounded-[2.5rem] overflow-hidden border-4 border-white shadow-xl bg-black">
+             <div className={`relative aspect-square rounded-[2.5rem] overflow-hidden border-4 shadow-xl bg-black transition-all duration-500 ${
+               matchStatus === 'Perfect' ? 'border-[#00D09C] ring-8 ring-[#00D09C]/20 scale-[1.02]' : 'border-white'
+             }`}>
                 <video ref={videoRef} className="w-full h-full object-cover opacity-70" playsInline muted />
                 <canvas ref={canvasRef} className="hidden" />
                 
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
-                   <div className="bg-white/90 backdrop-blur-md px-6 py-2 rounded-full shadow-lg border-2 border-amber-400">
+                   <div className={`bg-white/90 backdrop-blur-md px-6 py-2 rounded-full shadow-lg border-2 transition-colors duration-500 ${
+                     matchStatus === 'Perfect' ? 'border-[#00D09C]' : 'border-amber-400'
+                   }`}>
                       <span className="text-2xl font-black text-gray-900">{Math.round(brightness)}%</span>
                    </div>
                    <div className="mt-4 bg-black/40 backdrop-blur-sm px-4 py-1.5 rounded-xl border border-white/20">
@@ -390,16 +518,18 @@ const LightMeterModal: React.FC<LightMeterModalProps> = ({ targetLight, onClose 
              }`}>
                 {matchStatus === 'Perfect' ? (
                   <>
-                    <CheckCircle size={32} className="mb-2" />
-                    <h4 className="font-black text-lg">Perfect Match!</h4>
-                    <p className="text-[11px] font-medium opacity-80 leading-relaxed">This spot provides exactly the lighting your plant craves.</p>
+                    <CheckCircle size={40} className="mb-2 animate-bounce text-[#00D09C]" />
+                    <h4 className="font-black text-xl tracking-tight text-[#00D09C]">POSITION PERFECT</h4>
+                    <p className="text-[11px] font-bold opacity-80 leading-relaxed mt-1">This spot provides exactly the lighting your plant craves.</p>
                   </>
                 ) : (
                   <>
                     <AlertCircle size={32} className="mb-2" />
-                    <h4 className="font-black text-lg">{matchStatus}...</h4>
+                    <h4 className="font-black text-lg">{matchStatus === 'Checking' ? 'Analyzing...' : matchStatus}</h4>
                     <p className="text-[11px] font-medium opacity-80 leading-relaxed">
-                      {matchStatus === 'Too Low' ? "This spot might be too dim. Try closer to a window." : "This spot is too bright. Move it back a few feet."}
+                      {matchStatus === 'Too Low' ? "This spot might be too dim. Try closer to a window." : 
+                       matchStatus === 'Too Bright' ? "This spot is too bright. Move it back a few feet." :
+                       "Analyzing current environmental lighting..."}
                     </p>
                   </>
                 )}
