@@ -1,0 +1,8 @@
+{
+  "name": "FloraID - Planta Inspired Plant Care",
+  "description": "A comprehensive plant identification, diagnostics, and care app with Wikimedia integration and AI-powered health analysis.",
+  "requestFramePermissions": [
+    "camera",
+    "geolocation"
+  ]
+}
