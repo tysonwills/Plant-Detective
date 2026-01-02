@@ -1,16 +1,15 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
-import { PlantIdentification, CareGuide, DiagnosticResult } from "../types";
+import { IdentificationResponse, DiagnosticResult } from "../types";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
-
-export const identifyPlant = async (base64Image: string): Promise<{ identification: PlantIdentification; care: CareGuide }> => {
+export const identifyPlant = async (base64Image: string): Promise<IdentificationResponse> => {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const response = await ai.models.generateContent({
     model: "gemini-3-flash-preview",
     contents: {
       parts: [
         { inlineData: { mimeType: "image/jpeg", data: base64Image } },
-        { text: "Identify this plant and provide a comprehensive care guide. Return the result in a valid JSON format." }
+        { text: "Identify this plant and provide a comprehensive care guide. Also, suggest 3-4 similar plants. Return strictly valid JSON." }
       ]
     },
     config: {
@@ -40,23 +39,46 @@ export const identifyPlant = async (base64Image: string): Promise<{ identificati
               soil: { type: Type.STRING },
               pruning: { type: Type.STRING },
               seasonalCare: { type: Type.STRING },
-              homeRemedies: { type: Type.STRING }
+              homeRemedies: { type: Type.STRING },
+              hints: { 
+                type: Type.ARRAY,
+                items: { type: Type.STRING }
+              }
             },
-            required: ["watering", "sunlight", "soil"]
+            required: ["watering", "sunlight", "soil", "hints"]
+          },
+          similarPlants: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                name: { type: Type.STRING },
+                scientificName: { type: Type.STRING },
+                description: { type: Type.STRING }
+              },
+              required: ["name", "scientificName"]
+            }
           }
         },
-        required: ["identification", "care"]
+        required: ["identification", "care", "similarPlants"]
       }
     }
   });
 
-  return JSON.parse(response.text || "{}");
+  try {
+    const text = response.text || "{}";
+    return JSON.parse(text);
+  } catch (e) {
+    console.error("Failed to parse identification JSON", e);
+    throw new Error("Invalid response format");
+  }
 };
 
-export const getPlantInfoByName = async (plantName: string): Promise<{ identification: PlantIdentification; care: CareGuide }> => {
+export const getPlantInfoByName = async (plantName: string): Promise<IdentificationResponse> => {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const response = await ai.models.generateContent({
     model: "gemini-3-flash-preview",
-    contents: `Provide botanical information and a care guide for the plant: ${plantName}. Return as JSON.`,
+    contents: `Provide botanical information, care guide, and 3-4 similar plants for: ${plantName}. Return as JSON.`,
     config: {
       responseMimeType: "application/json",
       responseSchema: {
@@ -84,20 +106,43 @@ export const getPlantInfoByName = async (plantName: string): Promise<{ identific
               soil: { type: Type.STRING },
               pruning: { type: Type.STRING },
               seasonalCare: { type: Type.STRING },
-              homeRemedies: { type: Type.STRING }
+              homeRemedies: { type: Type.STRING },
+              hints: { 
+                type: Type.ARRAY,
+                items: { type: Type.STRING }
+              }
             },
-            required: ["watering", "sunlight", "soil"]
+            required: ["watering", "sunlight", "soil", "hints"]
+          },
+          similarPlants: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                name: { type: Type.STRING },
+                scientificName: { type: Type.STRING },
+                description: { type: Type.STRING }
+              },
+              required: ["name", "scientificName"]
+            }
           }
         },
-        required: ["identification", "care"]
+        required: ["identification", "care", "similarPlants"]
       }
     }
   });
 
-  return JSON.parse(response.text || "{}");
+  try {
+    const text = response.text || "{}";
+    return JSON.parse(text);
+  } catch (e) {
+    console.error("Failed to parse info JSON", e);
+    throw new Error("Invalid response format");
+  }
 };
 
 export const diagnoseHealth = async (base64Image: string): Promise<Omit<DiagnosticResult, 'id' | 'timestamp' | 'imageUrl'>> => {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const response = await ai.models.generateContent({
     model: "gemini-3-flash-preview",
     contents: {
@@ -121,5 +166,11 @@ export const diagnoseHealth = async (base64Image: string): Promise<Omit<Diagnost
     }
   });
 
-  return JSON.parse(response.text || "{}");
+  try {
+    const text = response.text || "{}";
+    return JSON.parse(text);
+  } catch (e) {
+    console.error("Failed to parse diagnostic JSON", e);
+    throw new Error("Invalid response format");
+  }
 };
