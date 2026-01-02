@@ -1,6 +1,6 @@
 
-import React, { useState } from 'react';
-import { ChevronLeft, Droplets, Sun, Sprout, Scissors, ShieldAlert, ExternalLink, Heart, Share2, Info, Lightbulb, CheckCircle, Bell, Leaf, Calendar, Plus, Clock, Check, ChevronRight } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { ChevronLeft, Droplets, Sun, Sprout, ShieldAlert, ExternalLink, Heart, Share2, Info, Lightbulb, CheckCircle, Leaf, Plus, Check, ChevronRight, Thermometer, AlertCircle, Sparkles, MapPin, ShoppingBag, Camera, X, RefreshCw } from 'lucide-react';
 import { IdentificationResponse, WikiImage, Reminder } from '../types';
 
 interface PlantResultScreenProps {
@@ -11,9 +11,10 @@ interface PlantResultScreenProps {
   onAddReminder?: () => void;
   onCompleteTask?: (type: string) => void;
   onSearchSimilar?: (query: string) => void;
+  onFindStores?: () => void;
   hideAddButton?: boolean;
   reminders?: Reminder[];
-  completedTasks?: string[]; // Track which tasks were done today
+  completedTasks?: string[];
 }
 
 const PlantResultScreen: React.FC<PlantResultScreenProps> = ({ 
@@ -24,13 +25,15 @@ const PlantResultScreen: React.FC<PlantResultScreenProps> = ({
   onAddReminder,
   onCompleteTask,
   onSearchSimilar,
+  onFindStores,
   hideAddButton, 
   reminders = [],
   completedTasks = []
 }) => {
-  const { identification, care, similarPlants = [] } = data;
+  const { identification, care, commonProblems = [], similarPlants = [] } = data;
   const [activeImg, setActiveImg] = useState(0);
   const [isLiked, setIsLiked] = useState(false);
+  const [showLightChecker, setShowLightChecker] = useState(false);
 
   return (
     <div className="animate-in fade-in slide-in-from-right-4 duration-500 pb-24 bg-[#F8FAFB]">
@@ -100,76 +103,54 @@ const PlantResultScreen: React.FC<PlantResultScreenProps> = ({
           <h1 className="text-4xl font-bold text-gray-900 mb-1 leading-tight">{identification.commonName}</h1>
           <p className="text-[#00D09C] font-semibold italic flex items-center gap-2 text-lg">
             {identification.scientificName}
-            {images[activeImg]?.sourcePageUrl && (
-              <a href={images[activeImg].sourcePageUrl} target="_blank" rel="noreferrer" className="text-gray-300 hover:text-[#00D09C] transition-colors">
-                <ExternalLink size={16} />
-              </a>
-            )}
           </p>
         </div>
 
-        {/* Care Schedule Section */}
-        {hideAddButton && (
-          <div className="mb-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-            <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-              <Calendar className="text-[#00D09C]" size={20} />
-              Care Schedule
-            </h2>
-            <div className="bg-white rounded-[2.5rem] p-6 shadow-sm border border-gray-100">
-              {reminders.length > 0 ? (
-                <div className="space-y-4 mb-6">
-                  {reminders.map((rem) => (
-                    <div key={rem.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl">
-                      <div className="flex items-center gap-3">
-                        <div className="bg-[#EFFFFB] p-2 rounded-xl text-[#00D09C]">
-                          <ReminderIcon type={rem.type} />
-                        </div>
-                        <div>
-                          <p className="text-xs font-bold text-gray-900">{rem.type}</p>
-                          <p className="text-[10px] text-gray-400">{rem.frequency} @ {rem.time}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-1 text-[#00D09C]">
-                         <Clock size={12} />
-                         <span className="text-[10px] font-bold">Active</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-4 mb-4">
-                  <p className="text-gray-400 text-xs italic">No reminders set for this plant yet.</p>
-                </div>
-              )}
-              
-              <button 
-                onClick={onAddReminder}
-                className="w-full bg-[#EFFFFB] text-[#00D09C] py-4 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 active:scale-[0.98] transition-all"
-              >
-                <Plus size={18} />
-                Add New Reminder
-              </button>
-            </div>
-          </div>
-        )}
+        {/* Light Level Checker Section */}
+        <div className="mb-10 bg-white p-8 rounded-[3rem] shadow-sm border border-gray-100 relative overflow-hidden group">
+           <div className="absolute top-0 right-0 w-32 h-32 bg-amber-50 rounded-full -mr-16 -mt-16 opacity-50 group-hover:scale-110 transition-transform duration-700"></div>
+           <div className="flex justify-between items-start mb-6 relative z-10">
+              <div className="bg-amber-100 p-4 rounded-[1.5rem] text-amber-600 shadow-sm">
+                <Sun size={24} />
+              </div>
+              <div className="text-right">
+                <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-600 mb-1">Target Intensity</h3>
+                <p className="text-sm font-black text-gray-900 leading-tight truncate max-w-[150px]">{care.sunlight}</p>
+              </div>
+           </div>
 
-        {identification.isToxic && (
-          <div className="bg-rose-50 border border-rose-100 p-6 rounded-[2.5rem] flex gap-4 mb-8">
-            <ShieldAlert className="text-rose-500 flex-shrink-0" size={28} />
+           <p className="text-xs text-gray-500 font-medium leading-relaxed mb-6 relative z-10">
+             Not sure if your spot has the right light? Use our AI Light Meter to check the current position.
+           </p>
+
+           <button 
+             onClick={() => setShowLightChecker(true)}
+             className="w-full bg-amber-500 hover:bg-amber-600 text-white py-4 rounded-2xl font-bold text-sm shadow-lg shadow-amber-200 active:scale-95 transition-all flex items-center justify-center gap-2 relative z-10"
+           >
+             <Camera size={18} /> Test Lighting Here
+           </button>
+        </div>
+
+        {/* Best Placement Section */}
+        {care.bestPlacement && (
+          <div className="mb-10 bg-gradient-to-br from-white to-emerald-50/30 p-8 rounded-[3rem] shadow-sm border border-emerald-100 flex gap-5 items-start">
+            <div className="bg-[#00D09C] p-4 rounded-[1.5rem] text-white shadow-lg shadow-[#00D09C33]">
+              <MapPin size={24} fill="currentColor" fillOpacity={0.2} />
+            </div>
             <div>
-              <h4 className="text-rose-900 font-bold text-sm">Toxicity Warning</h4>
-              <p className="text-rose-700 text-xs mt-1 leading-relaxed font-medium">
-                {identification.toxicityWarning || "Harmful to pets and children if ingested. Handle with care."}
+              <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-[#00D09C] mb-1">Ideal Placement</h3>
+              <p className="text-sm font-bold text-gray-900 leading-relaxed">
+                {care.bestPlacement}
               </p>
             </div>
           </div>
         )}
 
-        {/* Vital Stats with Completion Toggle */}
+        {/* Vital Stats Grid */}
         <div className="mb-10">
           <h2 className="text-xl font-bold text-gray-900 mb-5 flex justify-between items-center">
             Vital Stats
-            {hideAddButton && <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Tap icons to complete</span>}
+            {hideAddButton && <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Tap to complete today</span>}
           </h2>
           <div className="grid grid-cols-2 gap-4">
             <CareDetailCard 
@@ -189,23 +170,35 @@ const PlantResultScreen: React.FC<PlantResultScreenProps> = ({
               onToggle={() => hideAddButton && onCompleteTask?.('Sunlight')}
             />
             <CareDetailCard 
-              icon={<Sprout size={22} />} 
-              title="Soil Type" 
-              content={care.soil} 
-              color="bg-emerald-50 text-emerald-600"
-              isDone={completedTasks.includes('Soil Type')}
-              onToggle={() => hideAddButton && onCompleteTask?.('Soil Type')}
+              icon={<Thermometer size={22} />} 
+              title="Temperature" 
+              content={care.temperature} 
+              color="bg-rose-50 text-rose-600"
+              isDone={completedTasks.includes('Temperature')}
+              onToggle={() => hideAddButton && onCompleteTask?.('Temperature')}
             />
             <CareDetailCard 
-              icon={<Scissors size={22} />} 
-              title="Pruning" 
-              content={care.pruning} 
-              color="bg-purple-50 text-purple-600"
-              isDone={completedTasks.includes('Pruning')}
-              onToggle={() => hideAddButton && onCompleteTask?.('Pruning')}
+              icon={<Sprout size={22} />} 
+              title="Foundation" 
+              content={care.soil} 
+              color="bg-emerald-50 text-emerald-600"
+              isDone={completedTasks.includes('Foundation')}
+              onToggle={() => hideAddButton && onCompleteTask?.('Foundation')}
             />
           </div>
         </div>
+
+        {identification.isToxic && (
+          <div className="bg-rose-50 border border-rose-100 p-6 rounded-[2.5rem] flex gap-4 mb-8">
+            <ShieldAlert className="text-rose-500 flex-shrink-0" size={28} />
+            <div>
+              <h4 className="text-rose-900 font-bold text-sm">Toxicity Warning</h4>
+              <p className="text-rose-700 text-xs mt-1 leading-relaxed font-medium">
+                {identification.toxicityWarning || "Harmful to pets and children if ingested. Handle with care."}
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Expert Care Hints Section */}
         {care.hints && care.hints.length > 0 && (
@@ -217,8 +210,8 @@ const PlantResultScreen: React.FC<PlantResultScreenProps> = ({
             <div className="grid grid-cols-1 gap-3">
               {care.hints.map((hint, i) => (
                 <div key={i} className="bg-gradient-to-r from-amber-50 to-white p-5 rounded-[2rem] border border-amber-100/50 flex gap-4 items-start shadow-sm">
-                  <div className="bg-amber-100 p-2 rounded-xl mt-0.5">
-                    <SparklesIcon className="w-4 h-4 text-amber-600" />
+                  <div className="bg-amber-100 p-2 rounded-xl mt-0.5 text-amber-600">
+                    <Sparkles size={16} strokeWidth={2.5} />
                   </div>
                   <p className="text-sm text-amber-900 font-bold leading-relaxed">{hint}</p>
                 </div>
@@ -227,82 +220,211 @@ const PlantResultScreen: React.FC<PlantResultScreenProps> = ({
           </div>
         )}
 
-        {/* About Section */}
-        <div className="mb-10">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">Botanical Description</h2>
-          <div className="bg-white p-7 rounded-[3rem] shadow-sm border border-gray-100">
-            <p className="text-gray-600 text-sm leading-relaxed font-medium">
-              {identification.description}
-            </p>
-          </div>
+        {/* Action Buttons */}
+        <div className="flex flex-col gap-4 mb-12">
+          {!hideAddButton && (
+            <button 
+              onClick={() => onAddToGarden(identification.commonName, identification.scientificName, images[0]?.imageUrl)}
+              className="w-full bg-[#00D09C] py-6 rounded-[2.5rem] text-white font-bold text-lg shadow-xl shadow-[#00D09C44] active:scale-95 transition-transform flex items-center justify-center gap-3"
+            >
+              <Plus size={22} strokeWidth={2.5} />
+              Add to My Garden
+            </button>
+          )}
+          
+          <button 
+            onClick={onFindStores}
+            className="w-full bg-white py-6 rounded-[2.5rem] text-[#00D09C] font-bold text-lg border-2 border-[#00D09C] shadow-sm active:scale-95 transition-transform flex items-center justify-center gap-3"
+          >
+            <ShoppingBag size={22} strokeWidth={2.5} />
+            Where to Buy
+          </button>
+        </div>
+      </div>
+
+      {/* Light Checker Modal Overlay */}
+      {showLightChecker && (
+        <LightMeterModal 
+          targetLight={care.sunlight} 
+          onClose={() => setShowLightChecker(false)} 
+        />
+      )}
+    </div>
+  );
+};
+
+interface LightMeterModalProps {
+  targetLight: string;
+  onClose: () => void;
+}
+
+const LightMeterModal: React.FC<LightMeterModalProps> = ({ targetLight, onClose }) => {
+  const [brightness, setBrightness] = useState(0);
+  const [level, setLevel] = useState<'Low' | 'Medium' | 'Bright' | 'Direct'>('Low');
+  const [matchStatus, setMatchStatus] = useState<'Checking' | 'Too Low' | 'Perfect' | 'Too Bright'>('Checking');
+  const [error, setError] = useState<string | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const animationRef = useRef<number>(0);
+
+  const startCamera = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: 'environment' } 
+      });
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        videoRef.current.play();
+        animationRef.current = requestAnimationFrame(processFrame);
+      }
+    } catch (err) {
+      setError("Camera access is needed to measure light levels.");
+    }
+  };
+
+  const processFrame = () => {
+    if (videoRef.current && canvasRef.current) {
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+
+      if (ctx && video.readyState === video.HAVE_ENOUGH_DATA) {
+        canvas.width = 100;
+        canvas.height = 100;
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const data = imageData.data;
+        let totalR = 0, totalG = 0, totalB = 0;
+
+        for (let i = 0; i < data.length; i += 4) {
+          totalR += data[i];
+          totalG += data[i + 1];
+          totalB += data[i + 2];
+        }
+
+        const avgBrightness = (totalR + totalG + totalB) / (data.length / 4 * 3);
+        const normalized = Math.min(100, (avgBrightness / 255) * 100);
+        setBrightness(normalized);
+
+        // Map brightness to levels
+        let currentLevel: 'Low' | 'Medium' | 'Bright' | 'Direct' = 'Low';
+        if (normalized < 25) currentLevel = 'Low';
+        else if (normalized < 55) currentLevel = 'Medium';
+        else if (normalized < 80) currentLevel = 'Bright';
+        else currentLevel = 'Direct';
+        setLevel(currentLevel);
+
+        // Simplified match logic
+        const target = targetLight.toLowerCase();
+        let targetLvl: 'Low' | 'Medium' | 'Bright' | 'Direct' = 'Medium';
+        if (target.includes('direct') || target.includes('full sun')) targetLvl = 'Direct';
+        else if (target.includes('bright') || target.includes('high')) targetLvl = 'Bright';
+        else if (target.includes('medium') || target.includes('partial')) targetLvl = 'Medium';
+        else if (target.includes('low') || target.includes('shade')) targetLvl = 'Low';
+
+        const levelWeights = { 'Low': 0, 'Medium': 1, 'Bright': 2, 'Direct': 3 };
+        const currentWeight = levelWeights[currentLevel];
+        const targetWeight = levelWeights[targetLvl];
+
+        if (currentWeight === targetWeight) setMatchStatus('Perfect');
+        else if (currentWeight < targetWeight) setMatchStatus('Too Low');
+        else setMatchStatus('Too Bright');
+      }
+    }
+    animationRef.current = requestAnimationFrame(processFrame);
+  };
+
+  useEffect(() => {
+    startCamera();
+    return () => {
+      cancelAnimationFrame(animationRef.current);
+      if (videoRef.current?.srcObject) {
+        const stream = videoRef.current.srcObject as MediaStream;
+        stream.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, []);
+
+  return (
+    <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-md flex items-center justify-center p-6 animate-in fade-in duration-300">
+      <div className="bg-white w-full max-w-sm rounded-[3rem] p-8 shadow-2xl relative overflow-hidden">
+        <button 
+          onClick={onClose}
+          className="absolute top-6 right-6 z-20 bg-gray-100 p-2 rounded-xl text-gray-500 active:scale-90 transition-transform"
+        >
+          <X size={20} />
+        </button>
+
+        <div className="text-center mb-8">
+          <h2 className="text-2xl font-bold text-gray-900 mb-1">Environment Check</h2>
+          <p className="text-gray-400 text-xs font-medium italic">Target: {targetLight}</p>
         </div>
 
-        {/* Similar Plants Section */}
-        {similarPlants.length > 0 && (
-          <div className="mb-10">
-            <h2 className="text-xl font-bold text-gray-900 mb-5 flex items-center gap-2">
-              <Sprout className="text-[#00D09C]" size={20} />
-              Similar Species
-            </h2>
-            <div className="flex gap-4 overflow-x-auto pb-4 -mx-2 px-2 scrollbar-hide">
-              {similarPlants.map((plant, i) => (
-                <button 
-                  key={i}
-                  onClick={() => onSearchSimilar?.(plant.scientificName || plant.name)}
-                  className="flex-shrink-0 w-48 bg-white rounded-[2.5rem] overflow-hidden border border-gray-100 shadow-sm active:scale-95 transition-all text-left group"
-                >
-                  <div className="h-32 w-full bg-gray-100 relative">
-                    <img 
-                      src={`https://picsum.photos/seed/${plant.name}/300/200`} 
-                      alt={plant.name}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                    />
-                    <div className="absolute inset-0 bg-black/5"></div>
-                  </div>
-                  <div className="p-4">
-                    <h4 className="font-bold text-gray-900 text-sm truncate">{plant.name}</h4>
-                    <p className="text-[10px] text-[#00D09C] italic mb-2 truncate">{plant.scientificName}</p>
-                    <div className="flex items-center gap-1 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                      Explore <ChevronRight size={10} />
-                    </div>
-                  </div>
-                </button>
-              ))}
-            </div>
+        {error ? (
+          <div className="text-center py-12">
+            <AlertCircle size={48} className="text-rose-500 mx-auto mb-4" />
+            <p className="text-gray-900 font-bold mb-6">{error}</p>
+            <button onClick={onClose} className="bg-gray-900 text-white px-8 py-3 rounded-2xl font-bold">Close</button>
           </div>
-        )}
+        ) : (
+          <div className="space-y-6">
+             <div className="relative aspect-square rounded-[2.5rem] overflow-hidden border-4 border-white shadow-xl bg-black">
+                <video ref={videoRef} className="w-full h-full object-cover opacity-70" playsInline muted />
+                <canvas ref={canvasRef} className="hidden" />
+                
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                   <div className="bg-white/90 backdrop-blur-md px-6 py-2 rounded-full shadow-lg border-2 border-amber-400">
+                      <span className="text-2xl font-black text-gray-900">{Math.round(brightness)}%</span>
+                   </div>
+                   <div className="mt-4 bg-black/40 backdrop-blur-sm px-4 py-1.5 rounded-xl border border-white/20">
+                      <p className="text-[10px] font-bold text-white uppercase tracking-widest">{level} Light Detected</p>
+                   </div>
+                </div>
+             </div>
 
-        {/* Action Button */}
-        {!hideAddButton && (
-          <button 
-            onClick={() => onAddToGarden(identification.commonName, identification.scientificName, images[0]?.imageUrl)}
-            className="w-full bg-[#00D09C] py-6 rounded-[2.5rem] text-white font-bold text-lg shadow-xl shadow-[#00D09C44] active:scale-95 transition-transform mb-12"
-          >
-            Add to My Garden
-          </button>
+             <div className={`p-6 rounded-[2rem] border-2 flex flex-col items-center text-center transition-all duration-500 ${
+                matchStatus === 'Perfect' ? 'bg-emerald-50 border-emerald-200 text-emerald-700' :
+                matchStatus === 'Checking' ? 'bg-gray-50 border-gray-100 text-gray-400' :
+                'bg-amber-50 border-amber-200 text-amber-700'
+             }`}>
+                {matchStatus === 'Perfect' ? (
+                  <>
+                    <CheckCircle size={32} className="mb-2" />
+                    <h4 className="font-black text-lg">Perfect Match!</h4>
+                    <p className="text-[11px] font-medium opacity-80 leading-relaxed">This spot provides exactly the lighting your plant craves.</p>
+                  </>
+                ) : (
+                  <>
+                    <AlertCircle size={32} className="mb-2" />
+                    <h4 className="font-black text-lg">{matchStatus}...</h4>
+                    <p className="text-[11px] font-medium opacity-80 leading-relaxed">
+                      {matchStatus === 'Too Low' ? "This spot might be too dim. Try closer to a window." : "This spot is too bright. Move it back a few feet."}
+                    </p>
+                  </>
+                )}
+             </div>
+
+             <div className="flex gap-3">
+               <button 
+                onClick={onClose}
+                className="flex-1 bg-gray-900 text-white py-4 rounded-2xl font-bold text-sm shadow-xl shadow-black/10 active:scale-95 transition-transform"
+               >
+                 I'm Done
+               </button>
+               <button 
+                onClick={() => window.location.reload()}
+                className="bg-gray-100 p-4 rounded-2xl text-gray-400 active:rotate-180 transition-transform duration-500"
+               >
+                 <RefreshCw size={20} />
+               </button>
+             </div>
+          </div>
         )}
       </div>
     </div>
   );
 };
-
-const ReminderIcon = ({ type }: { type: string }) => {
-  switch (type) {
-    case 'Water': return <Droplets size={14} />;
-    case 'Fertilize': return <Leaf size={14} />;
-    case 'Prune': return <Scissors size={14} />;
-    case 'Mist': return <Calendar size={14} />;
-    case 'Repot': return <Sprout size={14} />;
-    default: return <Bell size={14} />;
-  }
-};
-
-const SparklesIcon = ({ className }: { className?: string }) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
-    <path d="M5 3v4M3 5h4M19 17v4M17 19h4" />
-  </svg>
-);
 
 const CareDetailCard = ({ icon, title, content, color, isDone, onToggle }: any) => (
   <div 

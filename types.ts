@@ -14,19 +14,28 @@ export interface CareGuide {
   watering: string;
   sunlight: string;
   soil: string;
+  temperature: string;
   pruning: string;
   seasonalCare: string;
   homeRemedies: string;
-  hints: string[]; // Added quick care hints
+  hints: string[];
+  bestPlacement: string;
+}
+
+export interface CommonProblem {
+  problem: string;
+  solution: string;
 }
 
 export interface IdentificationResponse {
   identification: PlantIdentification;
   care: CareGuide;
+  commonProblems: CommonProblem[];
   similarPlants: Array<{
     name: string;
     scientificName: string;
     description: string;
+    imageUrl?: string;
   }>;
 }
 
@@ -35,7 +44,7 @@ export interface Reminder {
   plantId: string;
   type: 'Water' | 'Fertilize' | 'Prune' | 'Mist' | 'Repot';
   frequency: 'Daily' | 'Weekly' | 'Bi-weekly' | 'Monthly';
-  time: string; // HH:mm format
+  time: string;
   lastCompleted?: string;
 }
 
@@ -67,4 +76,5 @@ export interface GardenCenter {
   latitude: number;
   longitude: number;
   address: string;
+  website?: string;
 }

@@ -36,3 +36,40 @@ export const getWikiImages = async (scientificName: string, genus: string): Prom
     return [];
   }
 };
+
+/**
+ * Fetches a single high-quality thumbnail for a specific plant name.
+ */
+export const getWikiThumbnail = async (name: string): Promise<string | undefined> => {
+  const searchName = encodeURIComponent(name);
+  // Using query-search to find relevant pages first is often more reliable for thumbnails
+  const url = `https://commons.wikimedia.org/w/api.php?action=query&format=json&origin=*&generator=search&gsrsearch=${searchName}&gsrlimit=1&prop=imageinfo&iiprop=url&gsrnamespace=6`;
+
+  try {
+    const response = await fetch(url);
+    const data = await response.json();
+    
+    if (data.query && data.query.pages) {
+      const pages = data.query.pages;
+      const firstPageId = Object.keys(pages)[0];
+      const page = pages[firstPageId];
+      if (page.imageinfo && page.imageinfo[0]) {
+        return page.imageinfo[0].url;
+      }
+    }
+    
+    // Fallback simple search
+    const fallbackUrl = `https://commons.wikimedia.org/w/api.php?action=query&format=json&origin=*&titles=${searchName}&prop=imageinfo&iiprop=url&generator=images&gimlimit=1`;
+    const fallbackRes = await fetch(fallbackUrl);
+    const fallbackData = await fallbackRes.json();
+    if (fallbackData.query && fallbackData.query.pages) {
+      const pId = Object.keys(fallbackData.query.pages)[0];
+      return fallbackData.query.pages[pId]?.imageinfo?.[0]?.url;
+    }
+
+    return undefined;
+  } catch (error) {
+    console.error("Wiki thumbnail search failed:", error);
+    return undefined;
+  }
+};

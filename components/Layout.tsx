@@ -1,74 +1,126 @@
 
 import React from 'react';
-import { Home, ClipboardList, MapPin, User, Camera, Leaf } from 'lucide-react';
+import { Home, ClipboardList, MapPin, User, Camera, Leaf, Crown, Sun } from 'lucide-react';
 
 interface LayoutProps {
   children: React.ReactNode;
   activeTab: string;
   setActiveTab: (tab: string) => void;
   onCameraClick: () => void;
+  userName?: string;
+  isSubscribed?: boolean;
 }
 
-const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, onCameraClick }) => {
+const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, onCameraClick, userName, isSubscribed }) => {
+  const isMainTab = ['home', 'my-plants', 'diagnose', 'stores', 'profile', 'upsell'].includes(activeTab);
+
   return (
     <div className="flex flex-col min-h-screen max-w-md mx-auto bg-[#F8FAFB] shadow-xl relative overflow-hidden">
+      {/* Top Header Section */}
+      {isMainTab && activeTab !== 'upsell' && (
+        <header className="px-6 pt-12 pb-4 flex justify-between items-center z-30 bg-[#F8FAFB]">
+          <div className="flex items-center gap-2">
+            <div className="bg-[#00D09C] w-8 h-8 rounded-xl flex items-center justify-center shadow-sm">
+              <Leaf size={18} className="text-white" />
+            </div>
+            <div className="flex flex-col">
+               <span className="font-bold text-xl text-gray-900 tracking-tight leading-none">FloraID</span>
+               {isSubscribed && <span className="text-[8px] font-bold text-[#D4AF37] uppercase tracking-[0.2em] mt-0.5">Premium</span>}
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-3">
+            {!isSubscribed && (
+              <button 
+                onClick={() => setActiveTab('upsell')}
+                className="bg-[#FFF9E6] px-3 py-1.5 rounded-xl border border-[#D4AF37]/20 flex items-center gap-1.5 text-[#D4AF37] active:scale-95 transition-transform"
+              >
+                <Crown size={12} fill="currentColor" />
+                <span className="text-[9px] font-black uppercase tracking-wider">Unlock Pro</span>
+              </button>
+            )}
+            <button 
+              onClick={() => setActiveTab('profile')}
+              className={`relative p-0.5 rounded-2xl border-2 transition-all active:scale-90 ${activeTab === 'profile' ? 'border-[#00D09C]' : 'border-white shadow-sm'}`}
+            >
+              <div className="w-9 h-9 bg-[#EFFFFB] rounded-[0.9rem] flex items-center justify-center text-[#00D09C] font-bold text-sm overflow-hidden">
+                {userName ? userName[0].toUpperCase() : <User size={18} />}
+              </div>
+            </button>
+          </div>
+        </header>
+      )}
+
       {/* Main Content */}
-      <main className="flex-1 pb-24 overflow-y-auto">
+      <main className={`flex-1 overflow-y-auto ${isMainTab && activeTab !== 'upsell' ? 'pb-24' : ''}`}>
         {children}
       </main>
 
       {/* Floating Action Button */}
-      <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-50">
-        <button 
-          onClick={onCameraClick}
-          className="bg-[#00D09C] p-5 rounded-full shadow-lg shadow-[#00D09C44] text-white transform active:scale-95 transition-transform"
-        >
-          <Camera size={28} />
-        </button>
-      </div>
+      {activeTab !== 'upsell' && (
+        <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-50">
+          <button 
+            onClick={onCameraClick}
+            className="bg-[#00D09C] p-5 rounded-full shadow-lg shadow-[#00D09C44] text-white transform active:scale-95 transition-transform border-4 border-white"
+          >
+            <Camera size={28} />
+          </button>
+        </div>
+      )}
 
       {/* Bottom Nav Bar */}
-      <nav className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white border-t border-gray-100 px-4 py-3 flex justify-between items-center z-40 rounded-t-3xl">
-        <TabItem 
-          icon={<Home size={22} />} 
-          label="Home" 
-          active={activeTab === 'home'} 
-          onClick={() => setActiveTab('home')} 
-        />
-        <TabItem 
-          icon={<Leaf size={22} />} 
-          label="Garden" 
-          active={activeTab === 'my-plants'} 
-          onClick={() => setActiveTab('my-plants')} 
-        />
-        
-        {/* Placeholder for FAB spacing */}
-        <div className="w-12" />
+      {activeTab !== 'upsell' && (
+        <nav className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white/90 backdrop-blur-lg border-t border-gray-100 px-4 py-3 flex justify-between items-center z-40 rounded-t-[2.5rem] shadow-[0_-10px_30px_rgba(0,0,0,0.02)]">
+          <TabItem 
+            icon={<Home size={20} />} 
+            label="Home" 
+            active={activeTab === 'home'} 
+            onClick={() => setActiveTab('home')} 
+          />
+          <TabItem 
+            icon={<Leaf size={20} />} 
+            label="Garden" 
+            isPro={!isSubscribed}
+            active={activeTab === 'my-plants'} 
+            onClick={() => setActiveTab('my-plants')} 
+          />
+          
+          <div className="w-12" />
 
-        <TabItem 
-          icon={<ClipboardList size={22} />} 
-          label="Diagnose" 
-          active={activeTab === 'diagnose'} 
-          onClick={() => setActiveTab('diagnose')} 
-        />
-        <TabItem 
-          icon={<User size={22} />} 
-          label="Profile" 
-          active={activeTab === 'profile'} 
-          onClick={() => setActiveTab('profile')} 
-        />
-      </nav>
+          <TabItem 
+            icon={<ClipboardList size={20} />} 
+            label="Doctor" 
+            isPro={!isSubscribed}
+            active={activeTab === 'diagnose'} 
+            onClick={() => setActiveTab('diagnose')} 
+          />
+          <TabItem 
+            icon={<MapPin size={20} />} 
+            label="Stores" 
+            isPro={!isSubscribed}
+            active={activeTab === 'stores'} 
+            onClick={() => setActiveTab('stores')} 
+          />
+        </nav>
+      )}
     </div>
   );
 };
 
-const TabItem = ({ icon, label, active, onClick }: { icon: any, label: string, active: boolean, onClick: () => void }) => (
+const TabItem = ({ icon, label, active, onClick, isPro }: { icon: any, label: string, active: boolean, onClick: () => void, isPro?: boolean }) => (
   <button 
     onClick={onClick}
-    className={`flex flex-col items-center gap-1 transition-colors ${active ? 'text-[#00D09C]' : 'text-gray-400'}`}
+    className={`flex flex-col items-center gap-1 transition-all duration-300 relative ${active ? 'text-[#00D09C] scale-110' : 'text-gray-300 hover:text-gray-400'}`}
   >
-    {icon}
-    <span className="text-[10px] font-medium">{label}</span>
+    {isPro && (
+      <div className="absolute -top-1 -right-1 text-[#D4AF37]">
+        <Crown size={8} fill="currentColor" />
+      </div>
+    )}
+    <div className={`${active ? 'bg-emerald-50 p-1 rounded-lg' : ''}`}>
+      {icon}
+    </div>
+    <span className={`text-[8px] font-bold uppercase tracking-wider ${active ? 'opacity-100' : 'opacity-60'}`}>{label}</span>
   </button>
 );
 
