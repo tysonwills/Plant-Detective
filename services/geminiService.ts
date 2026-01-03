@@ -54,9 +54,10 @@ const identificationSchema = {
         type: Type.OBJECT,
         properties: {
           problem: { type: Type.STRING },
+          description: { type: Type.STRING },
           solution: { type: Type.STRING }
         },
-        required: ["problem", "solution"]
+        required: ["problem", "description", "solution"]
       }
     }
   }
@@ -69,7 +70,7 @@ export const identifyPlant = async (base64Image: string): Promise<Identification
     contents: {
       parts: [
         { inlineData: { mimeType: "image/jpeg", data: base64Image } },
-        { text: "Identify this plant. For the main result and for each 'similarPlant' entry, provide full botanical data including identification details, complete care parameters (intervals, temps, height), and common problems. This allows for instant navigation between related species. Return strictly valid JSON." }
+        { text: "Identify this plant. For the main result and for each 'similarPlant' entry, provide full botanical data including identification details, complete care parameters (intervals, temps, height), and common problems. For 'commonProblems', provide a detailed 'description' of the symptoms and a 'solution' formatted as a numbered list of specific steps. Return strictly valid JSON." }
       ]
     },
     config: {
@@ -105,7 +106,7 @@ export const getPlantInfoByName = async (plantName: string): Promise<Identificat
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const response = await ai.models.generateContent({
     model: "gemini-3-flash-preview",
-    contents: `Provide botanical information and care guide for: ${plantName}. Also include 3 similar plants with their own basic care and identification data. Return strictly valid JSON.`,
+    contents: `Provide botanical information and care guide for: ${plantName}. Also include 3 similar plants with their own basic care and identification data. For 'commonProblems', provide a detailed 'description' of the symptoms and a 'solution' formatted as a numbered list of specific steps. Return strictly valid JSON.`,
     config: {
       responseMimeType: "application/json",
       responseSchema: {

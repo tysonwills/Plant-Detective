@@ -322,16 +322,13 @@ const App: React.FC = () => {
   };
 
   const handleViewRelative = async (relative: any) => {
-    // If the relative already has full details, use them immediately
     if (relative.identification && relative.care) {
       setIdResult(relative as IdentificationResponse);
       const images = await getWikiImages(relative.identification.scientificName, relative.identification.genus);
       setWikiImages(images);
       setActiveTab('id-result');
-      // Scroll to top
       window.scrollTo(0, 0);
     } else {
-      // Fallback to name search if for some reason the relative data is sparse
       handlePlantSearch(relative.scientificName || relative.name);
     }
   };
@@ -444,67 +441,75 @@ const App: React.FC = () => {
       isSubscribed={user?.isSubscribed}
     >
       {isProcessing && (
-        <div className="fixed inset-0 z-[100] bg-white/95 backdrop-blur-3xl flex flex-col items-center justify-center p-12 text-center animate-in fade-in duration-500 overflow-hidden">
-           <div className="absolute inset-0 opacity-10 pointer-events-none" 
-                style={{ backgroundImage: 'radial-gradient(#00D09C 1px, transparent 1px)', backgroundSize: '40px 40px' }}></div>
+        <div className="fixed inset-0 z-[100] bg-white flex flex-col items-center justify-center p-12 text-center animate-in fade-in duration-500 overflow-hidden">
+           {/* Light Immersive Background */}
+           <div className="absolute inset-0 opacity-20 pointer-events-none" 
+                style={{ backgroundImage: 'radial-gradient(#00D09C 1.5px, transparent 1.5px)', backgroundSize: '30px 30px' }}></div>
            
            <div className="relative mb-16 scale-110">
-              <div className="w-56 h-56 border-2 border-emerald-50 rounded-full flex items-center justify-center relative shadow-[0_0_80px_rgba(0,208,156,0.15)] ring-1 ring-emerald-100/30">
+              {/* Airy Scanning Rings */}
+              <div className="w-56 h-56 border-4 border-[#EFFFFB] rounded-full flex items-center justify-center relative shadow-[0_0_60px_rgba(0,208,156,0.1)]">
                  
-                 <div className="absolute inset-0 border-4 border-dashed border-[#00D09C] rounded-full animate-[spin_12s_linear_infinite] opacity-20"></div>
-                 <div className="absolute inset-4 border-2 border-[#00D09C] rounded-full animate-[spin_8s_linear_reverse_infinite] border-t-transparent border-b-transparent opacity-40"></div>
-                 <div className="absolute inset-10 border border-[#00D09C] rounded-full animate-[spin_4s_linear_infinite] border-l-transparent border-r-transparent opacity-60"></div>
+                 {/* Bright Animated Arcs */}
+                 <div className="absolute inset-0 border-[3px] border-dashed border-[#00D09C]/30 rounded-full animate-[spin_10s_linear_infinite]"></div>
+                 <div className="absolute inset-3 border-2 border-[#00D09C]/50 rounded-full animate-[spin_6s_linear_reverse_infinite] border-t-transparent border-b-transparent"></div>
                  
-                 <div className="absolute inset-x-8 h-[2px] bg-gradient-to-r from-transparent via-[#00D09C] to-transparent animate-[scanLine_2.5s_ease-in-out_infinite] shadow-[0_0_20px_#00D09C] z-20"></div>
+                 {/* Horizontal Scanning Laser (Light variant) */}
+                 <div className="absolute inset-x-4 h-[3px] bg-gradient-to-r from-transparent via-[#00D09C] to-transparent animate-[scanLine_2.2s_ease-in-out_infinite] shadow-[0_0_15px_#00D09C] z-20"></div>
                  
-                 <div className="bg-white/80 backdrop-blur-md p-10 rounded-full relative z-10 border-2 border-emerald-50 shadow-xl overflow-hidden group">
-                    <Sprout className="text-[#00D09C] animate-pulse drop-shadow-md" size={64} strokeWidth={2} />
-                    <div className="absolute inset-0 bg-emerald-400/5 animate-pulse"></div>
+                 {/* Central Specimen Focus */}
+                 <div className="bg-white p-10 rounded-full relative z-10 border-4 border-[#EFFFFB] shadow-lg overflow-hidden">
+                    <Sprout className="text-[#00D09C] animate-pulse" size={64} strokeWidth={2.5} />
+                    <div className="absolute inset-0 bg-[#00D09C]/5 animate-pulse"></div>
                  </div>
 
-                 <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-[#00D09C] rounded-tl-2xl opacity-80"></div>
-                 <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-[#00D09C] rounded-tr-2xl opacity-80"></div>
-                 <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-[#00D09C] rounded-bl-2xl opacity-80"></div>
-                 <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-[#00D09C] rounded-br-2xl opacity-80"></div>
+                 {/* Sharp Styling Brackets */}
+                 <div className="absolute top-0 left-0 w-10 h-10 border-t-4 border-l-4 border-[#00D09C] rounded-tl-3xl"></div>
+                 <div className="absolute top-0 right-0 w-10 h-10 border-t-4 border-r-4 border-[#00D09C] rounded-tr-3xl"></div>
+                 <div className="absolute bottom-0 left-0 w-10 h-10 border-b-4 border-l-4 border-[#00D09C] rounded-bl-3xl"></div>
+                 <div className="absolute bottom-0 right-0 w-10 h-10 border-b-4 border-r-4 border-[#00D09C] rounded-br-3xl"></div>
               </div>
               
-              <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-full mb-4 bg-white/90 backdrop-blur-md px-4 py-2 rounded-2xl shadow-lg border border-emerald-100 flex items-center gap-2 animate-bounce">
+              {/* Float Badge */}
+              <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-white px-5 py-2 rounded-2xl shadow-xl border border-emerald-100 flex items-center gap-2 animate-bounce">
                  <Fingerprint className="text-[#00D09C]" size={16} />
-                 <span className="text-[10px] font-black uppercase tracking-widest text-emerald-700">Sequence Matching</span>
+                 <span className="text-[10px] font-black uppercase tracking-widest text-[#00D09C]">Cellular Analysis</span>
               </div>
            </div>
 
            <div className="max-w-xs relative z-10">
               <div className="flex items-center justify-center gap-3 mb-4">
-                 <div className="bg-emerald-500 p-2 rounded-xl text-white shadow-lg shadow-emerald-200">
-                    <Microscope size={22} />
+                 <div className="bg-[#00D09C] p-2.5 rounded-2xl text-white shadow-xl shadow-emerald-100">
+                    <Microscope size={24} />
                  </div>
                  <h3 className="text-3xl font-black text-gray-900 tracking-tighter leading-none">Botanical Lab</h3>
               </div>
-              <p className="text-gray-400 font-bold italic text-sm mb-10 leading-relaxed px-4">
-                 Decoding cellular structures and sequencing taxonomic markers...
+              <p className="text-gray-400 font-bold text-sm mb-10 leading-relaxed px-4">
+                 Sequencing phenotypic markers and analyzing chloroplast density...
               </p>
 
-              <div className="bg-gray-900 p-6 rounded-[2.5rem] font-mono text-[9px] text-emerald-400 text-left space-y-2 shadow-2xl border-4 border-gray-800 h-32 overflow-hidden relative group">
-                 <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-gray-900 to-transparent z-10"></div>
-                 <div className="animate-[scrollLog_15s_linear_infinite] space-y-1.5">
-                    <p className="flex justify-between items-center"><span className="opacity-60">10:42:01</span> <span>INITIALIZING_SCAN_ENG...</span> <span className="text-white">DONE</span></p>
-                    <p className="flex justify-between items-center"><span className="opacity-60">10:42:02</span> <span>EXTRACTING_PHENO_DATA...</span> <span className="text-white">DONE</span></p>
-                    <p className="flex justify-between items-center"><span className="opacity-60">10:42:04</span> <span>SEQ_GENUS_MARKERS...</span> <span className="animate-pulse">MATCHING</span></p>
-                    <p className="flex justify-between items-center"><span className="opacity-60">10:42:05</span> <span>MAPPING_VENATION...</span> <span className="text-emerald-200">92%</span></p>
-                    <p className="flex justify-between items-center"><span className="opacity-60">10:42:07</span> <span>CROSS_REF_TAXONOMY...</span> <span className="text-white">RUNNING</span></p>
-                    <p className="flex justify-between items-center"><span className="opacity-60">10:42:08</span> <span>ENV_FACTOR_CALC...</span> <span className="text-emerald-200">VALIDATING</span></p>
-                    <p className="flex justify-between items-center"><span className="opacity-60">10:42:10</span> <span>TOX_ANALYSIS_SYNC...</span> <span className="text-white">OK</span></p>
-                    <p className="flex justify-between items-center"><span className="opacity-60">10:42:12</span> <span>FETCHING_CARE_SCHEMA...</span> <span className="animate-pulse">LINKING</span></p>
+              {/* Light Styled Log Viewer */}
+              <div className="bg-[#EFFFFB] p-6 rounded-[2.5rem] font-mono text-[10px] text-emerald-700 text-left space-y-2.5 shadow-inner border-2 border-emerald-100/50 h-36 overflow-hidden relative group">
+                 <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-[#EFFFFB] to-transparent z-10"></div>
+                 <div className="animate-[scrollLog_18s_linear_infinite] space-y-2">
+                    <p className="flex justify-between items-center"><span className="opacity-50">10:42:01</span> <span>INITIALIZING_SCAN_ENG...</span> <span className="font-black text-emerald-500">READY</span></p>
+                    <p className="flex justify-between items-center"><span className="opacity-50">10:42:02</span> <span>EXTRACTING_PHENO_DATA...</span> <span className="font-black text-emerald-500">OK</span></p>
+                    <p className="flex justify-between items-center"><span className="opacity-50">10:42:04</span> <span>SEQ_GENUS_MARKERS...</span> <span className="animate-pulse font-black">MATCHING</span></p>
+                    <p className="flex justify-between items-center"><span className="opacity-50">10:42:05</span> <span>MAPPING_VENATION...</span> <span className="font-black">92%</span></p>
+                    <p className="flex justify-between items-center"><span className="opacity-50">10:42:07</span> <span>CROSS_REF_TAXONOMY...</span> <span className="font-black">RUNNING</span></p>
+                    <p className="flex justify-between items-center"><span className="opacity-50">10:42:08</span> <span>ENV_FACTOR_CALC...</span> <span className="font-black">SYNCING</span></p>
+                    <p className="flex justify-between items-center"><span className="opacity-50">10:42:10</span> <span>TOX_ANALYSIS_SYNC...</span> <span className="font-black text-emerald-500">OK</span></p>
+                    <p className="flex justify-between items-center"><span className="opacity-50">10:42:12</span> <span>FETCHING_CARE_SCHEMA...</span> <span className="animate-pulse font-black">FETCH</span></p>
                  </div>
               </div>
            </div>
 
-           <div className="absolute bottom-24 flex items-center gap-4 px-8 py-3 bg-white rounded-full shadow-lg border border-gray-100">
-              <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Compiling Database</span>
-              <div className="flex gap-1">
+           {/* Airy status bar */}
+           <div className="absolute bottom-24 flex items-center gap-4 px-10 py-4 bg-emerald-50 rounded-full shadow-lg border-2 border-white">
+              <span className="text-[11px] font-black text-[#00D09C] uppercase tracking-widest">Compiling Database</span>
+              <div className="flex gap-1.5">
                 {[...Array(3)].map((_, i) => (
-                  <div key={i} className="w-2 h-2 bg-emerald-500 rounded-full animate-bounce" style={{ animationDelay: `${i * 0.2}s` }} />
+                  <div key={i} className="w-2.5 h-2.5 bg-[#00D09C] rounded-full animate-bounce" style={{ animationDelay: `${i * 0.2}s` }} />
                 ))}
               </div>
            </div>
@@ -578,7 +583,7 @@ const App: React.FC = () => {
         }
         @keyframes scrollLog {
           0% { transform: translateY(0); }
-          100% { transform: translateY(-150px); }
+          100% { transform: translateY(-200px); }
         }
       `}</style>
     </div>

@@ -34,6 +34,7 @@ export interface CareGuide {
 
 export interface CommonProblem {
   problem: string;
+  description: string;
   solution: string;
 }
 

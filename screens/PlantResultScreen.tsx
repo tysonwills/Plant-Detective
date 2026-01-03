@@ -306,13 +306,14 @@ const PlantResultScreen: React.FC<PlantResultScreenProps> = ({
           <HeightScaleCard height={care.estimatedHeight || "1m"} />
         </div>
 
+        {/* Expanded Common Problems Section */}
         {commonProblems.length > 0 && (
           <div className="mb-16">
             <h2 className="text-2xl font-black text-gray-900 mb-8 flex items-center gap-4">
               <div className="bg-[#00D09C] p-2 rounded-xl text-white shadow-lg"><Stethoscope size={20} /></div>
               Common Challenges
             </h2>
-            <div className="space-y-6">
+            <div className="space-y-8">
               {commonProblems.map((problem, i) => (
                 <div key={i} className="bg-white rounded-[3rem] p-8 shadow-sm border border-gray-100 group">
                   <div className="flex items-start gap-5 mb-6">
@@ -320,23 +321,35 @@ const PlantResultScreen: React.FC<PlantResultScreenProps> = ({
                       <HelpCircle size={24} />
                     </div>
                     <div>
-                      <h4 className="text-lg font-black text-gray-900 leading-tight mb-1">{problem.problem}</h4>
-                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Diagnosis</p>
+                      <h4 className="text-xl font-black text-gray-900 leading-tight mb-1">{problem.problem}</h4>
+                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Diagnostic Profile</p>
                     </div>
                   </div>
+
+                  <div className="mb-8">
+                    <h5 className="text-[11px] font-black uppercase tracking-widest text-gray-900 mb-2 opacity-60">Symptom Overview</h5>
+                    <p className="text-gray-700 text-sm font-semibold leading-relaxed">
+                      {problem.description}
+                    </p>
+                  </div>
                   
-                  <div className="bg-emerald-50/20 rounded-[2.5rem] p-6 border border-emerald-50/50">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="w-6 h-6 bg-[#00D09C] text-white rounded-full flex items-center justify-center">
-                        <Check size={14} strokeWidth={4} />
+                  <div className="bg-emerald-50/20 rounded-[2.5rem] p-8 border border-emerald-50/50 shadow-inner">
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className="w-8 h-8 bg-[#00D09C] text-white rounded-full flex items-center justify-center shadow-md">
+                        <Activity size={16} strokeWidth={3} />
                       </div>
-                      <span className="text-[11px] font-black uppercase tracking-widest text-gray-900">Expert Solution</span>
+                      <span className="text-[11px] font-black uppercase tracking-widest text-[#00D09C]">Expert Recovery Plan</span>
                     </div>
-                    <div className="space-y-3">
-                      {problem.solution.split('\n').map((step, si) => (
-                        <p key={si} className="text-gray-700 text-sm font-semibold leading-relaxed pl-3 border-l-2 border-[#00D09C]/30">
-                          {step}
-                        </p>
+                    <div className="space-y-5">
+                      {problem.solution.split('\n').filter(s => s.trim()).map((step, si) => (
+                        <div key={si} className="flex gap-4 items-start">
+                          <div className="flex-shrink-0 w-6 h-6 rounded-lg bg-[#00D09C]/10 flex items-center justify-center text-[#00D09C] text-[10px] font-black">
+                            {si + 1}
+                          </div>
+                          <p className="text-gray-800 text-sm font-bold leading-relaxed pt-0.5">
+                            {step.replace(/^\d+[\.\)]\s*/, '')}
+                          </p>
+                        </div>
                       ))}
                     </div>
                   </div>
