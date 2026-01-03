@@ -4,7 +4,9 @@ import { ChevronLeft, Droplets, Sun, Sprout, ShieldAlert, Heart, Share2, Info, L
 import { IdentificationResponse, WikiImage, Reminder } from '../types';
 
 interface PlantResultScreenProps {
-  data: IdentificationResponse;
+  data: IdentificationResponse | null;
+  loading?: boolean;
+  placeholderName?: string;
   images: WikiImage[];
   onAddToGarden: (name: string, species: string, img?: string) => void;
   onBack: () => void;
@@ -19,6 +21,8 @@ interface PlantResultScreenProps {
 
 const PlantResultScreen: React.FC<PlantResultScreenProps> = ({ 
   data, 
+  loading = false,
+  placeholderName = "",
   images, 
   onAddToGarden, 
   onBack, 
@@ -30,7 +34,6 @@ const PlantResultScreen: React.FC<PlantResultScreenProps> = ({
   reminders = [],
   completedTasks = []
 }) => {
-  const { identification, care, commonProblems = [], similarPlants = [] } = data;
   const [activeImg, setActiveImg] = useState(0);
   const [isLiked, setIsLiked] = useState(false);
   const [showLightChecker, setShowLightChecker] = useState(false);
@@ -39,22 +42,25 @@ const PlantResultScreen: React.FC<PlantResultScreenProps> = ({
 
   // Load and persist "Liked" state
   useEffect(() => {
-    const favorites = JSON.parse(localStorage.getItem('flora_favorites') || '[]');
-    const isFav = favorites.some((f: any) => f.scientificName === identification.scientificName);
-    setIsLiked(isFav);
-  }, [identification.scientificName]);
+    if (data?.identification) {
+      const favorites = JSON.parse(localStorage.getItem('flora_favorites') || '[]');
+      const isFav = favorites.some((f: any) => f.scientificName === data.identification.scientificName);
+      setIsLiked(isFav);
+    }
+  }, [data?.identification?.scientificName]);
 
   const toggleLike = () => {
+    if (!data) return;
     const favorites = JSON.parse(localStorage.getItem('flora_favorites') || '[]');
     let newFavorites;
     
     if (isLiked) {
-      newFavorites = favorites.filter((f: any) => f.scientificName !== identification.scientificName);
+      newFavorites = favorites.filter((f: any) => f.scientificName !== data.identification.scientificName);
       showToast('Removed from Favorites', 'info');
     } else {
       const newFav = {
-        scientificName: identification.scientificName,
-        commonName: identification.commonName,
+        scientificName: data.identification.scientificName,
+        commonName: data.identification.commonName,
         image: images[0]?.imageUrl,
         timestamp: new Date().toISOString(),
         fullData: data,
@@ -69,10 +75,11 @@ const PlantResultScreen: React.FC<PlantResultScreenProps> = ({
   };
 
   const handleShare = async () => {
+    if (!data) return;
     if (navigator.share) {
       const shareData = {
-        title: `Check out this ${identification.commonName}!`,
-        text: `I just identified a ${identification.commonName} (${identification.scientificName}) using FloraID. It's a beautiful ${identification.genus} plant!`,
+        title: `Check out this ${data.identification.commonName}!`,
+        text: `I just identified a ${data.identification.commonName} (${data.identification.scientificName}) using FloraID. It's a beautiful ${data.identification.genus} plant!`,
         url: window.location.href
       };
       try {
@@ -100,6 +107,57 @@ const PlantResultScreen: React.FC<PlantResultScreenProps> = ({
     setActiveImg((prev) => (prev - 1 + images.length) % images.length);
   };
 
+  // If we have botanical data but no images, we still render the botanical UI but shimmer the images.
+  const hasBotanicalData = !!data?.identification;
+
+  if (!hasBotanicalData && (loading || !data)) {
+    return (
+      <div className="animate-in fade-in duration-500 pb-32 bg-[#F8FAFB] relative min-h-screen">
+        <div className="absolute top-12 left-0 right-0 z-20 px-6 flex justify-between items-center">
+          <button onClick={onBack} className="bg-white/90 backdrop-blur-md p-2.5 rounded-2xl shadow-sm text-gray-800"><ChevronLeft size={24} /></button>
+        </div>
+        
+        <div className="relative h-[55vh] bg-emerald-50 overflow-hidden flex items-center justify-center">
+           <div className="absolute inset-0 bg-gradient-to-r from-emerald-50 via-emerald-100 to-emerald-50 animate-shimmer" style={{ backgroundSize: '200% 100%' }}></div>
+           <Sprout size={64} className="text-[#00D09C] animate-pulse opacity-40" />
+        </div>
+
+        <div className="px-8 -mt-12 relative z-10">
+          <div className="mb-10 bg-white p-8 rounded-[3rem] shadow-sm border border-emerald-50">
+             <div className="w-16 h-5 bg-emerald-50 rounded-full mb-4 animate-pulse"></div>
+             <h1 className="text-4xl font-black text-gray-900 mb-2 leading-tight tracking-tighter">
+                {placeholderName || "Identifying..."}
+             </h1>
+             <div className="w-48 h-4 bg-gray-100 rounded-full animate-pulse"></div>
+          </div>
+
+          <div className="space-y-4">
+             {[1, 2, 3].map(i => (
+               <div key={i} className="bg-white p-6 rounded-[2.5rem] border border-gray-100 h-32 flex items-center gap-4">
+                  <div className="w-12 h-12 bg-gray-50 rounded-2xl animate-pulse"></div>
+                  <div className="flex-1 space-y-2">
+                     <div className="w-24 h-3 bg-gray-100 rounded-full animate-pulse"></div>
+                     <div className="w-full h-4 bg-emerald-50/50 rounded-full animate-pulse"></div>
+                  </div>
+               </div>
+             ))}
+          </div>
+        </div>
+        <style>{`
+          @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+          }
+          .animate-shimmer {
+            animation: shimmer 2.5s infinite linear;
+          }
+        `}</style>
+      </div>
+    );
+  }
+
+  // Safe to destructure here as hasBotanicalData is true and data is not null
+  const { identification, care, commonProblems = [], similarPlants = [] } = data!;
   const displayRelatives = similarPlants.slice(0, 4);
 
   return (
@@ -179,13 +237,14 @@ const PlantResultScreen: React.FC<PlantResultScreenProps> = ({
                 />
               ))}
             </div>
-            <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-[#F8FAFB] via-[#F8FAFB]/40 to-transparent"></div>
           </>
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-emerald-50">
-            <Sprout size={64} className="text-emerald-200 animate-pulse" />
+            <div className="absolute inset-0 bg-gradient-to-r from-emerald-50 via-emerald-100 to-emerald-50 animate-shimmer" style={{ backgroundSize: '200% 100%' }}></div>
+            <Sprout size={64} className="text-[#00D09C] animate-pulse opacity-40" />
           </div>
         )}
+        <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-[#F8FAFB] via-[#F8FAFB]/40 to-transparent"></div>
       </div>
 
       <div className="px-8 -mt-12 relative z-10">
@@ -196,9 +255,9 @@ const PlantResultScreen: React.FC<PlantResultScreenProps> = ({
               Botanist Verified
             </div>
             {identification.isToxic && (
-              <div className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-rose-50 text-rose-500 rounded-full text-[10px] font-black uppercase tracking-widest border border-rose-100/50">
+              <div className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-rose-950 text-white rounded-full text-[10px] font-black uppercase tracking-widest border border-rose-900 shadow-lg animate-pulse">
                 <ShieldAlert size={12} />
-                Toxic Specimen
+                High Toxicity
               </div>
             )}
           </div>
@@ -268,31 +327,31 @@ const PlantResultScreen: React.FC<PlantResultScreenProps> = ({
         </div>
 
         {identification.isToxic && (
-          <div className="bg-rose-50/50 p-7 rounded-[2.5rem] flex flex-col gap-5 mb-12 border-2 border-rose-100/50">
+          <div className="bg-rose-100 p-7 rounded-[2.5rem] flex flex-col gap-5 mb-12 border-2 border-rose-200 shadow-sm">
             <div className="flex gap-4 items-center">
-              <div className="bg-rose-100 text-rose-500 p-3 rounded-2xl">
+              <div className="bg-rose-700 text-white p-3 rounded-2xl shadow-lg">
                 <ShieldAlert size={24} />
               </div>
               <div>
-                <h4 className="text-rose-900 font-black text-lg tracking-tight leading-none mb-1">Safety Notice</h4>
-                <p className="text-rose-700/70 text-[11px] font-bold uppercase tracking-wider">
-                  Toxic to ingestion
+                <h4 className="text-rose-950 font-black text-lg tracking-tight leading-none mb-1">Safety Notice</h4>
+                <p className="text-rose-800 text-[11px] font-black uppercase tracking-wider">
+                  Critical Safety Level
                 </p>
               </div>
             </div>
             
-            <div className="bg-white rounded-[2rem] p-5 border border-rose-100/50 shadow-sm">
-              <p className="text-gray-800 text-sm font-semibold leading-relaxed mb-4">
+            <div className="bg-white rounded-[2rem] p-6 border border-rose-200 shadow-sm">
+              <p className="text-rose-950 text-sm font-black leading-relaxed mb-4">
                 {identification.toxicityWarning || "Harmful if ingested. Keep away from pets and children."}
               </p>
               
               {identification.toxicityAdvice && (
-                <div className="bg-rose-50/50 rounded-2xl p-4 border-l-4 border-rose-400">
+                <div className="bg-rose-50 rounded-2xl p-4 border-l-4 border-rose-700">
                   <div className="flex items-center gap-2 mb-2">
-                    <AlertTriangle size={14} className="text-rose-500" />
-                    <span className="text-[10px] font-black uppercase tracking-widest text-rose-600">Emergency Protocol</span>
+                    <AlertTriangle size={14} className="text-rose-700" />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-rose-800">Emergency Protocol</span>
                   </div>
-                  <p className="text-rose-800 text-xs font-bold leading-relaxed">
+                  <p className="text-rose-900 text-xs font-bold leading-relaxed">
                     {identification.toxicityAdvice}
                   </p>
                 </div>
@@ -306,7 +365,6 @@ const PlantResultScreen: React.FC<PlantResultScreenProps> = ({
           <HeightScaleCard height={care.estimatedHeight || "1m"} />
         </div>
 
-        {/* Expanded Common Problems Section */}
         {commonProblems.length > 0 && (
           <div className="mb-16">
             <h2 className="text-2xl font-black text-gray-900 mb-8 flex items-center gap-4">
@@ -399,51 +457,56 @@ const PlantResultScreen: React.FC<PlantResultScreenProps> = ({
           </div>
         </div>
 
-        {displayRelatives.length > 0 && (
-          <div className="mb-16">
-            <h2 className="text-2xl font-black text-gray-900 mb-8 flex items-center gap-4">
-              <div className="bg-[#00D09C] p-2 rounded-xl text-white shadow-lg"><Microscope size={20} /></div>
-              Genetic Relatives
-            </h2>
-            <div className="grid grid-cols-2 gap-5">
-              {displayRelatives.map((plant, i) => (
-                <button 
-                  key={i}
-                  onClick={() => onSearchSimilar?.(plant)}
-                  className="flex flex-col bg-white rounded-[2.5rem] overflow-hidden border border-gray-100 shadow-sm active:scale-[0.97] transition-all text-left group h-full relative ring-1 ring-gray-100 hover:ring-[#00D09C]/40"
-                >
-                  <div className="aspect-[4/5] w-full bg-gray-100 relative overflow-hidden">
-                    <img 
-                      src={plant.imageUrl || `https://picsum.photos/seed/${plant.name}/400/300`} 
-                      alt={plant.name}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-emerald-900/90 via-emerald-800/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col items-center justify-center p-6 text-center">
-                       <div className="bg-white/20 backdrop-blur-md p-3 rounded-2xl mb-3 shadow-xl ring-1 ring-white/30">
-                          <Search className="text-white" size={24} />
-                       </div>
-                       <span className="text-[9px] font-black text-white uppercase tracking-[0.2em] leading-tight">View Full Care Profile</span>
-                    </div>
+        <div className="mb-16">
+          <h2 className="text-2xl font-black text-gray-900 mb-8 flex items-center gap-4">
+            <div className="bg-[#00D09C] p-2 rounded-xl text-white shadow-lg"><Microscope size={20} /></div>
+            Genetic Relatives
+          </h2>
+          <div className="grid grid-cols-2 gap-5">
+            {displayRelatives.length > 0 ? displayRelatives.map((plant, i) => (
+              <button 
+                key={i}
+                onClick={() => onSearchSimilar?.(plant)}
+                className="flex flex-col bg-white rounded-[2.5rem] overflow-hidden border border-gray-100 shadow-sm active:scale-[0.97] transition-all text-left group h-full relative ring-1 ring-gray-100 hover:ring-[#00D09C]/40"
+              >
+                <div className="aspect-[4/5] w-full bg-gray-100 relative overflow-hidden">
+                  <img 
+                    src={plant.imageUrl || `https://picsum.photos/seed/${plant.name}/400/300`} 
+                    alt={plant.name}
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-emerald-900/90 via-emerald-800/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col items-center justify-center p-6 text-center">
+                     <div className="bg-white/20 backdrop-blur-md p-3 rounded-2xl mb-3 shadow-xl ring-1 ring-white/30">
+                        <Search className="text-white" size={24} />
+                     </div>
+                     <span className="text-[9px] font-black text-white uppercase tracking-[0.2em] leading-tight">View Full Care Profile</span>
                   </div>
-                  <div className="p-5 flex flex-col flex-1 bg-white relative z-10">
-                    <h4 className="font-black text-gray-900 text-[13px] truncate mb-0.5 leading-tight group-hover:text-[#00D09C] transition-colors">{plant.name}</h4>
-                    <p className="text-[9px] text-gray-400 font-bold italic mb-4 truncate tracking-tight">{plant.scientificName}</p>
-                    
-                    <div className="mt-auto pt-4 border-t border-gray-50 flex items-center justify-between">
-                       <div className="flex items-center gap-1.5 text-[#00D09C]">
-                          <Activity size={10} strokeWidth={3} />
-                          <span className="text-[8px] font-black uppercase tracking-widest">Profile Available</span>
-                       </div>
-                       <div className="text-[#00D09C] group-hover:translate-x-1 transition-transform">
-                         <ChevronRight size={14} strokeWidth={3} />
-                       </div>
-                    </div>
+                </div>
+                <div className="p-5 flex flex-col flex-1 bg-white relative z-10">
+                  <h4 className="font-black text-gray-900 text-[13px] truncate mb-0.5 leading-tight group-hover:text-[#00D09C] transition-colors">{plant.name}</h4>
+                  <p className="text-[9px] text-gray-400 font-bold italic mb-4 truncate tracking-tight">{plant.scientificName}</p>
+                  
+                  <div className="mt-auto pt-4 border-t border-gray-50 flex items-center justify-between">
+                     <div className="flex items-center gap-1.5 text-[#00D09C]">
+                        <Activity size={10} strokeWidth={3} />
+                        <span className="text-[8px] font-black uppercase tracking-widest">Profile Available</span>
+                     </div>
+                     <div className="text-[#00D09C] group-hover:translate-x-1 transition-transform">
+                       <ChevronRight size={14} strokeWidth={3} />
+                     </div>
                   </div>
-                </button>
-              ))}
-            </div>
+                </div>
+              </button>
+            )) : (
+              // Placeholder grid for relative plants while loading
+              [1, 2, 3, 4].map(i => (
+                <div key={i} className="bg-white rounded-[2.5rem] overflow-hidden border border-gray-100 h-64 relative">
+                   <div className="absolute inset-0 bg-gradient-to-r from-gray-50 via-gray-100 to-gray-50 animate-shimmer" style={{ backgroundSize: '200% 100%' }}></div>
+                </div>
+              ))
+            )}
           </div>
-        )}
+        </div>
 
         <div className="flex flex-col gap-6 mb-12">
           {!hideAddButton && (
@@ -480,6 +543,15 @@ const PlantResultScreen: React.FC<PlantResultScreenProps> = ({
           onToast={showToast}
         />
       )}
+      <style>{`
+        @keyframes shimmer {
+          0% { background-position: -200% 0; }
+          100% { background-position: 200% 0; }
+        }
+        .animate-shimmer {
+          animation: shimmer 2.5s infinite linear;
+        }
+      `}</style>
     </div>
   );
 };
@@ -811,8 +883,8 @@ const LightMeterModal: React.FC<LightMeterModalProps> = ({ targetLight, onClose 
         else if (target.includes('medium') || target.includes('partial')) targetLvl = 'Medium';
         else if (target.includes('low') || target.includes('shade')) targetLvl = 'Low';
         const levelWeights = { 'Low': 0, 'Medium': 1, 'Bright': 2, 'Direct': 3 };
-        const currentWeight = levelWeights[currentLevel];
-        const targetWeight = levelWeights[targetLvl];
+        const currentWeight = currentLevel ? levelWeights[currentLevel] : 0;
+        const targetWeight = targetLvl ? levelWeights[targetLvl] : 1;
         if (currentWeight === targetWeight) setMatchStatus('Perfect');
         else if (currentWeight < targetWeight) setMatchStatus('Too Low');
         else setMatchStatus('Too Bright');

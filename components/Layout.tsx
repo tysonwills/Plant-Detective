@@ -53,7 +53,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, onCa
             
             <button 
               onClick={() => handleTabClick('favorites')}
-              className={`p-2.5 rounded-2xl transition-all active:scale-90 ${activeTab === 'favorites' ? 'bg-rose-50 text-rose-500 shadow-inner' : 'bg-white text-gray-400 shadow-sm border border-gray-50'}`}
+              className={`p-2.5 rounded-2xl transition-all active:scale-90 ${activeTab === 'favorites' ? 'bg-rose-50 text-rose-500 shadow-inner' : 'bg-white text-gray-500 shadow-sm border border-gray-50'}`}
             >
               <Heart size={20} className={activeTab === 'favorites' ? 'fill-rose-500' : ''} />
             </button>
@@ -132,7 +132,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, onCa
 const TabItem = ({ icon, label, active, onClick, isPro }: { icon: any, label: string, active: boolean, onClick: () => void, isPro?: boolean }) => (
   <button 
     onClick={onClick}
-    className={`flex flex-col items-center gap-1 transition-all duration-300 relative ${active ? 'text-[#00D09C] scale-110' : 'text-gray-300 hover:text-gray-400'}`}
+    className={`flex flex-col items-center gap-1 transition-all duration-300 relative ${active ? 'text-[#00D09C] scale-110' : 'text-gray-500 hover:text-gray-700'}`}
   >
     {isPro && (
       <div className="absolute -top-1 -right-1 text-[#D4AF37]">
@@ -142,7 +142,7 @@ const TabItem = ({ icon, label, active, onClick, isPro }: { icon: any, label: st
     <div className={`${active ? 'bg-emerald-50 p-1 rounded-lg' : ''}`}>
       {icon}
     </div>
-    <span className={`text-[8px] font-bold uppercase tracking-wider ${active ? 'opacity-100' : 'opacity-60'}`}>{label}</span>
+    <span className={`text-[8px] font-black uppercase tracking-wider ${active ? 'opacity-100' : 'opacity-60'}`}>{label}</span>
   </button>
 );
 

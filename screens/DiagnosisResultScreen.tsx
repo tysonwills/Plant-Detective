@@ -14,7 +14,7 @@ const DiagnosisResultScreen: React.FC<DiagnosisResultScreenProps> = ({ result, o
     switch (severity) {
       case 'Healthy': return 'bg-emerald-50 text-emerald-600 border-emerald-100';
       case 'Warning': return 'bg-amber-50 text-amber-600 border-amber-100';
-      case 'Critical': return 'bg-rose-50 text-rose-600 border-rose-100';
+      case 'Critical': return 'bg-rose-100 text-rose-800 border-rose-200 shadow-sm';
       default: return 'bg-gray-50 text-gray-600 border-gray-100';
     }
   };
@@ -23,7 +23,7 @@ const DiagnosisResultScreen: React.FC<DiagnosisResultScreenProps> = ({ result, o
     switch (severity) {
       case 'Healthy': return <CheckCircle2 size={24} />;
       case 'Warning': return <AlertTriangle size={24} />;
-      case 'Critical': return <ShieldAlert size={24} />;
+      case 'Critical': return <ShieldAlert size={24} className="text-rose-700" />;
       default: return <Activity size={24} />;
     }
   };
@@ -56,17 +56,17 @@ const DiagnosisResultScreen: React.FC<DiagnosisResultScreenProps> = ({ result, o
       {/* Diagnostic Card */}
       <div className="px-8 -mt-20 relative z-10">
         <div className="bg-white rounded-[3rem] p-8 shadow-xl border border-gray-100 mb-8">
-          <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border text-xs font-bold uppercase tracking-widest mb-4 ${getSeverityStyles(result.severity)}`}>
+          <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border text-xs font-black uppercase tracking-widest mb-4 ${getSeverityStyles(result.severity)}`}>
             {getSeverityIcon(result.severity)}
             {result.severity} Status
           </div>
           
-          <h1 className="text-3xl font-bold text-gray-900 mb-2 leading-tight">
+          <h1 className="text-3xl font-black text-gray-900 mb-2 leading-tight">
             {result.plantName}
           </h1>
           <p className="text-gray-500 font-medium mb-6 flex items-center gap-2">
-            <ShieldAlert size={18} className="text-gray-400" />
-            Detected Issue: <span className="text-gray-900 font-bold">{result.issue}</span>
+            <ShieldAlert size={18} className={result.severity === 'Critical' ? 'text-rose-700' : 'text-gray-400'} />
+            Detected Issue: <span className={`font-black uppercase tracking-tight ${result.severity === 'Critical' ? 'text-rose-700' : 'text-gray-900'}`}>{result.issue}</span>
           </p>
 
           <div className="h-px bg-gray-100 w-full mb-6"></div>
@@ -84,14 +84,14 @@ const DiagnosisResultScreen: React.FC<DiagnosisResultScreenProps> = ({ result, o
         <div className="space-y-4">
           <button 
             onClick={onBack}
-            className="w-full bg-[#00D09C] py-6 rounded-[2.5rem] text-white font-bold text-lg shadow-xl shadow-[#00D09C44] active:scale-95 transition-transform flex items-center justify-center gap-3"
+            className="w-full bg-[#00D09C] py-6 rounded-[2.5rem] text-white font-black text-lg shadow-xl shadow-[#00D09C44] active:scale-95 transition-transform flex items-center justify-center gap-3"
           >
             <History size={20} />
             Go to History
           </button>
           <button 
             onClick={onBack}
-            className="w-full bg-white py-6 rounded-[2.5rem] text-gray-400 font-bold text-lg border border-gray-100 active:scale-95 transition-transform"
+            className="w-full bg-white py-6 rounded-[2.5rem] text-gray-400 font-black text-lg border border-gray-100 active:scale-95 transition-transform"
           >
             Discard Scan
           </button>

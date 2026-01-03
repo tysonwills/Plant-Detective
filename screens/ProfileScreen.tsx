@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { User, ShieldCheck, Crown, Bell, LogOut, ChevronRight, Settings, Heart, Leaf, ClipboardList, Info } from 'lucide-react';
+import { User, ShieldCheck, Crown, Bell, LogOut, ChevronRight, Settings, Heart, Leaf, ClipboardList, Info, FileText } from 'lucide-react';
 import { UserProfile } from '../types';
 
 interface ProfileScreenProps {
@@ -13,9 +13,10 @@ interface ProfileScreenProps {
   onLogout: () => void;
   onNavigate: (tab: string) => void;
   onToggleNotifications: () => void;
+  onShowTerms: () => void;
 }
 
-const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, stats, onLogout, onNavigate, onToggleNotifications }) => {
+const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, stats, onLogout, onNavigate, onToggleNotifications, onShowTerms }) => {
   return (
     <div className="px-6 pb-24 animate-in fade-in slide-in-from-bottom-4 duration-500">
       {/* Header Profile Section */}
@@ -93,15 +94,16 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, stats, onLogout, on
         </div>
 
         <button 
+          onClick={onShowTerms}
           className="w-full bg-white p-5 rounded-3xl shadow-sm border border-gray-100 flex items-center justify-between group active:scale-[0.98] transition-all"
         >
           <div className="flex items-center gap-4">
             <div className="bg-blue-50 p-3 rounded-2xl text-blue-500 group-hover:scale-110 transition-transform">
-              <Info size={20} />
+              <FileText size={20} />
             </div>
             <div className="text-left">
-              <p className="font-black text-gray-900 text-sm">Support & FAQ</p>
-              <p className="text-[10px] font-bold text-gray-400">Get help with your plants</p>
+              <p className="font-black text-gray-900 text-sm">Privacy & Terms</p>
+              <p className="text-[10px] font-bold text-gray-400">Policy and conditions</p>
             </div>
           </div>
           <ChevronRight size={18} className="text-gray-300" />

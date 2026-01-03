@@ -7,10 +7,11 @@ interface HomeScreenProps {
   onSearch?: (query: string) => void;
   onAddToGarden?: (name: string, species: string) => void;
   onScanClick?: () => void;
+  onShowTerms?: () => void;
   isSubscribed?: boolean;
 }
 
-const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate, onSearch, onAddToGarden, onScanClick, isSubscribed }) => {
+const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate, onSearch, onAddToGarden, onScanClick, onShowTerms, isSubscribed }) => {
   const [searchQuery, setSearchQuery] = useState('');
 
   const databasePlants = [
@@ -154,9 +155,9 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate, onSearch, onAddToGa
                   <Camera size={32} className="text-white" />
                 </div>
                 {!isSubscribed && (
-                  <div className="bg-[#FFF9E6]/20 backdrop-blur-md px-3 py-1 rounded-full flex items-center gap-1.5 text-white text-[9px] font-black uppercase tracking-wider border border-white/20">
-                    <Crown size={10} fill="currentColor" className="text-[#D4AF37]" />
-                    AI Powered
+                  <div className="bg-[#D4AF37] px-4 py-2 rounded-2xl flex items-center gap-2 text-white text-[10px] font-black uppercase tracking-widest border-2 border-[#FFFFFF44] shadow-lg">
+                    <Crown size={14} fill="currentColor" />
+                    Flora Pro
                   </div>
                 )}
               </div>
@@ -200,11 +201,12 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate, onSearch, onAddToGa
               <button 
                 key={tool.id}
                 onClick={() => onNavigate?.(tool.tab)}
-                className="bg-white p-5 rounded-[2.5rem] shadow-sm border border-gray-100 flex flex-col items-start text-left active:scale-[0.97] transition-all group relative"
+                className={`bg-white p-5 rounded-[2.5rem] shadow-sm flex flex-col items-start text-left active:scale-[0.97] transition-all group relative border-2 ${tool.isPro && !isSubscribed ? 'border-amber-100' : 'border-gray-100'}`}
               >
                 {tool.isPro && !isSubscribed && (
-                  <div className="absolute top-5 right-5 text-[#D4AF37]">
-                    <Crown size={14} fill="currentColor" />
+                  <div className="absolute top-4 right-4 bg-amber-100 text-amber-600 p-1.5 rounded-xl flex items-center gap-1">
+                    <Crown size={12} fill="currentColor" />
+                    <span className="text-[8px] font-black uppercase">PRO</span>
                   </div>
                 )}
                 <div className={`${tool.color} p-3 rounded-2xl mb-3 group-hover:scale-110 transition-transform`}>
@@ -287,7 +289,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate, onSearch, onAddToGa
             </div>
           </div>
 
-          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 mb-12">
             <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2 px-1">
               <Info size={18} className="text-[#00D09C]" />
               Did You Know?
@@ -303,6 +305,16 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate, onSearch, onAddToGa
               ))}
             </div>
           </div>
+
+          <footer className="text-center py-8">
+            <p className="text-gray-400 text-[10px] font-black uppercase tracking-[0.2em]">
+              © 2023 FloraID. All rights reserved.
+            </p>
+            <div className="flex justify-center gap-4 mt-2">
+              <button onClick={onShowTerms} className="text-gray-400 text-[10px] font-black uppercase tracking-widest border-b border-gray-200">Terms</button>
+              <button onClick={onShowTerms} className="text-gray-400 text-[10px] font-black uppercase tracking-widest border-b border-gray-200">Privacy Policy</button>
+            </div>
+          </footer>
         </>
       )}
     </div>

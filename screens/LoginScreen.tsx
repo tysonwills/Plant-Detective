@@ -4,9 +4,10 @@ import { Sprout, Mail, Lock, ArrowRight } from 'lucide-react';
 
 interface LoginScreenProps {
   onLogin: (name: string, email: string) => void;
+  onShowTerms: (tab?: 'terms' | 'privacy') => void;
 }
 
-const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
+const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, onShowTerms }) => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
@@ -111,7 +112,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
 
       <div className="mt-8 z-10">
         <p className="text-white/60 text-xs text-center px-12 leading-relaxed">
-          By signing up, you agree to our <span className="text-white font-bold border-b border-white/30">Terms</span> and <span className="text-white font-bold border-b border-white/30">Privacy Policy</span>.
+          By signing up, you agree to our <button onClick={() => onShowTerms('terms')} className="text-white font-bold border-b border-white/30">Terms</button> and <button onClick={() => onShowTerms('privacy')} className="text-white font-bold border-b border-white/30">Privacy Policy</button>.
         </p>
       </div>
     </div>

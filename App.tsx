@@ -11,6 +11,7 @@ import DiagnosisResultScreen from './screens/DiagnosisResultScreen';
 import FavoritesScreen from './screens/FavoritesScreen';
 import ProfileScreen from './screens/ProfileScreen';
 import ChatScreen from './screens/ChatScreen';
+import TermsScreen from './screens/TermsScreen';
 import ReminderModal from './components/ReminderModal';
 import SplashScreen from './screens/SplashScreen';
 import { identifyPlant, diagnoseHealth, getPlantInfoByName } from './services/geminiService';
@@ -22,7 +23,10 @@ const App: React.FC = () => {
   const [showSplash, setShowSplash] = useState(true);
   const [user, setUser] = useState<UserProfile | null>(null);
   const [activeTab, setActiveTab] = useState('home');
+  const [termsInitialTab, setTermsInitialTab] = useState<'terms' | 'privacy'>('terms');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isSearchLoading, setIsSearchLoading] = useState(false);
+  const [currentSearchName, setCurrentSearchName] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [idResult, setIdResult] = useState<IdentificationResponse | null>(null);
   const [diagResult, setDiagResult] = useState<Omit<DiagnosticResult, 'id' | 'timestamp'> & { imageUrl?: string } | null>(null);
@@ -209,6 +213,11 @@ const App: React.FC = () => {
     fileInputRef.current?.click();
   };
 
+  const handleShowTerms = (tab: 'terms' | 'privacy' = 'terms') => {
+    setTermsInitialTab(tab);
+    setActiveTab('terms');
+  };
+
   const addPlantToGarden = (plant: { name: string, species: string, image?: string, fullData?: IdentificationResponse, wikiImages?: WikiImage[] }) => {
     const newPlant = {
       id: Date.now().toString(),
@@ -308,17 +317,37 @@ const App: React.FC = () => {
   };
 
   const handlePlantSearch = (query: string) => {
-    executeWithKeySafety(async () => {
-      const result = await getPlantInfoByName(query);
-      const images = await getWikiImages(result.identification.scientificName, result.identification.genus);
-      const similar = await Promise.all(result.similarPlants.map(async (p) => {
-        const thumb = await getWikiThumbnail(p.scientificName || p.name);
-        return { ...p, imageUrl: thumb || `https://picsum.photos/seed/${p.name}/400/600` };
-      }));
-      setWikiImages(images);
-      setIdResult({ ...result, similarPlants: similar });
-      setActiveTab('id-result');
-    });
+    setActiveTab('id-result');
+    setIsSearchLoading(true);
+    setCurrentSearchName(query);
+    setIdResult(null); 
+    setWikiImages([]);
+
+    (async () => {
+      try {
+        await checkAndSelectKey();
+        const result = await getPlantInfoByName(query);
+        setIdResult(result);
+        
+        const imagePromise = getWikiImages(result.identification.scientificName, result.identification.genus);
+        const similarPromise = Promise.all(result.similarPlants.map(async (p) => {
+          const searchFor = p.scientificName || p.name;
+          const thumb = await getWikiThumbnail(searchFor);
+          return { ...p, imageUrl: thumb || `https://picsum.photos/seed/${p.name}/400/600` };
+        }));
+
+        const [images, similar] = await Promise.all([imagePromise, similarPromise]);
+        
+        setWikiImages(images);
+        setIdResult({ ...result, similarPlants: similar });
+      } catch (err: any) {
+        console.error("Search fetch failed", err);
+        setError(err.message || "Failed to find botanical data for this specimen.");
+        setActiveTab('home');
+      } finally {
+        setIsSearchLoading(false);
+      }
+    })();
   };
 
   const handleViewRelative = async (relative: any) => {
@@ -362,14 +391,22 @@ const App: React.FC = () => {
       } else {
         executeWithKeySafety(async () => {
           const result = await identifyPlant(base64);
-          const images = await getWikiImages(result.identification.scientificName, result.identification.genus);
-          const similar = await Promise.all(result.similarPlants.map(async (p) => {
-            const thumb = await getWikiThumbnail(p.scientificName || p.name);
+          setIdResult(result);
+          setActiveTab('id-result');
+          setIsSearchLoading(true); 
+          
+          const imagePromise = getWikiImages(result.identification.scientificName, result.identification.genus);
+          const similarPromise = Promise.all(result.similarPlants.map(async (p) => {
+            const searchFor = p.scientificName || p.name;
+            const thumb = await getWikiThumbnail(searchFor);
             return { ...p, imageUrl: thumb || `https://picsum.photos/seed/${p.name}/400/600` };
           }));
+
+          const [images, similar] = await Promise.all([imagePromise, similarPromise]);
+          
           setWikiImages(images);
           setIdResult({ ...result, similarPlants: similar });
-          setActiveTab('id-result');
+          setIsSearchLoading(false);
         });
       }
     };
@@ -377,7 +414,9 @@ const App: React.FC = () => {
   };
 
   const renderContent = () => {
-    if (!user) return <LoginScreen onLogin={handleLogin} />;
+    if (activeTab === 'terms') return <TermsScreen initialTab={termsInitialTab} onBack={() => setActiveTab(user ? 'profile' : 'home')} />;
+    if (!user) return <LoginScreen onLogin={handleLogin} onShowTerms={handleShowTerms} />;
+    
     if (activeTab === 'upsell') return (
       <div className="flex flex-col items-center justify-center h-full px-8 text-center animate-in zoom-in-95 duration-500">
         <div className="bg-amber-50 p-6 rounded-[3rem] mb-8 text-[#D4AF37] shadow-xl shadow-amber-100">
@@ -408,7 +447,7 @@ const App: React.FC = () => {
         <button onClick={() => setActiveTab('home')} className="mt-6 text-gray-400 font-black text-xs uppercase tracking-widest">Maybe Later</button>
       </div>
     );
-    if (activeTab === 'home') return <HomeScreen isSubscribed={user.isSubscribed} onNavigate={handleNavigate} onSearch={handlePlantSearch} onScanClick={handleCameraClick} onAddToGarden={(n, s) => addPlantToGarden({ name: n, species: s })} />;
+    if (activeTab === 'home') return <HomeScreen isSubscribed={user.isSubscribed} onNavigate={handleNavigate} onSearch={handlePlantSearch} onScanClick={handleCameraClick} onShowTerms={handleShowTerms} onAddToGarden={(n, s) => addPlantToGarden({ name: n, species: s })} />;
     if (activeTab === 'my-plants') return <MyPlantsScreen plants={myPlants} reminders={reminders} completions={completions} onAddClick={handleCameraClick} onManageReminders={(id, name) => setReminderPlant({ id, name })} onPlantClick={(p) => { setIdResult(p.fullData || null); if (p.fullData) { setWikiImages(p.wikiImages || []); setActiveTab('id-result'); } }} onRemovePlant={handleRemovePlant} onCompleteTask={handleCompleteTask} />;
     if (activeTab === 'diagnose') return <DiagnosticsScreen onStartDiagnosis={handleCameraClick} />;
     if (activeTab === 'favorites') return <FavoritesScreen onPlantClick={handleViewFavorite} />;
@@ -422,10 +461,11 @@ const App: React.FC = () => {
       onLogout={handleLogout} 
       onNavigate={handleNavigate} 
       onToggleNotifications={handleToggleNotifications}
+      onShowTerms={handleShowTerms}
     />;
     if (activeTab === 'stores') return <MapScreen />;
     if (activeTab === 'chat') return <ChatScreen />;
-    if (activeTab === 'id-result' && idResult) return <PlantResultScreen data={idResult} images={wikiImages} onAddToGarden={(n, s, i) => addPlantToGarden({ name: n, species: s, image: i, fullData: idResult, wikiImages })} onBack={() => setActiveTab('home')} onFindStores={() => setActiveTab('stores')} onSearchSimilar={handleViewRelative} />;
+    if (activeTab === 'id-result') return <PlantResultScreen data={idResult} loading={isSearchLoading} placeholderName={currentSearchName} images={wikiImages} onAddToGarden={(n, s, i) => addPlantToGarden({ name: n, species: s, image: i, fullData: idResult, wikiImages })} onBack={() => setActiveTab('home')} onFindStores={() => setActiveTab('stores')} onSearchSimilar={handleViewRelative} />;
     if (activeTab === 'diag-result' && diagResult) return <DiagnosisResultScreen result={diagResult} onBack={() => setActiveTab('diagnose')} />;
     return <HomeScreen onNavigate={handleNavigate} />;
   };
@@ -442,35 +482,23 @@ const App: React.FC = () => {
     >
       {isProcessing && (
         <div className="fixed inset-0 z-[100] bg-white flex flex-col items-center justify-center p-12 text-center animate-in fade-in duration-500 overflow-hidden">
-           {/* Light Immersive Background */}
            <div className="absolute inset-0 opacity-20 pointer-events-none" 
                 style={{ backgroundImage: 'radial-gradient(#00D09C 1.5px, transparent 1.5px)', backgroundSize: '30px 30px' }}></div>
            
            <div className="relative mb-16 scale-110">
-              {/* Airy Scanning Rings */}
               <div className="w-56 h-56 border-4 border-[#EFFFFB] rounded-full flex items-center justify-center relative shadow-[0_0_60px_rgba(0,208,156,0.1)]">
-                 
-                 {/* Bright Animated Arcs */}
-                 <div className="absolute inset-0 border-[3px] border-dashed border-[#00D09C]/30 rounded-full animate-[spin_10s_linear_infinite]"></div>
-                 <div className="absolute inset-3 border-2 border-[#00D09C]/50 rounded-full animate-[spin_6s_linear_reverse_infinite] border-t-transparent border-b-transparent"></div>
-                 
-                 {/* Horizontal Scanning Laser (Light variant) */}
-                 <div className="absolute inset-x-4 h-[3px] bg-gradient-to-r from-transparent via-[#00D09C] to-transparent animate-[scanLine_2.2s_ease-in-out_infinite] shadow-[0_0_15px_#00D09C] z-20"></div>
-                 
-                 {/* Central Specimen Focus */}
+                 <div className="absolute inset-0 border-[3px] border-dashed border-[#00D09C]/30 rounded-full animate-[spin_8s_linear_infinite]"></div>
+                 <div className="absolute inset-3 border-2 border-[#00D09C]/50 rounded-full animate-[spin_4s_linear_reverse_infinite] border-t-transparent border-b-transparent"></div>
+                 <div className="absolute inset-x-4 h-[3px] bg-gradient-to-r from-transparent via-[#00D09C] to-transparent animate-[scanLine_1.8s_ease-in-out_infinite] shadow-[0_0_15px_#00D09C] z-20"></div>
                  <div className="bg-white p-10 rounded-full relative z-10 border-4 border-[#EFFFFB] shadow-lg overflow-hidden">
                     <Sprout className="text-[#00D09C] animate-pulse" size={64} strokeWidth={2.5} />
                     <div className="absolute inset-0 bg-[#00D09C]/5 animate-pulse"></div>
                  </div>
-
-                 {/* Sharp Styling Brackets */}
                  <div className="absolute top-0 left-0 w-10 h-10 border-t-4 border-l-4 border-[#00D09C] rounded-tl-3xl"></div>
                  <div className="absolute top-0 right-0 w-10 h-10 border-t-4 border-r-4 border-[#00D09C] rounded-tr-3xl"></div>
                  <div className="absolute bottom-0 left-0 w-10 h-10 border-b-4 border-l-4 border-[#00D09C] rounded-bl-3xl"></div>
                  <div className="absolute bottom-0 right-0 w-10 h-10 border-b-4 border-r-4 border-[#00D09C] rounded-br-3xl"></div>
               </div>
-              
-              {/* Float Badge */}
               <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-white px-5 py-2 rounded-2xl shadow-xl border border-emerald-100 flex items-center gap-2 animate-bounce">
                  <Fingerprint className="text-[#00D09C]" size={16} />
                  <span className="text-[10px] font-black uppercase tracking-widest text-[#00D09C]">Cellular Analysis</span>
@@ -488,10 +516,9 @@ const App: React.FC = () => {
                  Sequencing phenotypic markers and analyzing chloroplast density...
               </p>
 
-              {/* Light Styled Log Viewer */}
               <div className="bg-[#EFFFFB] p-6 rounded-[2.5rem] font-mono text-[10px] text-emerald-700 text-left space-y-2.5 shadow-inner border-2 border-emerald-100/50 h-36 overflow-hidden relative group">
                  <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-[#EFFFFB] to-transparent z-10"></div>
-                 <div className="animate-[scrollLog_18s_linear_infinite] space-y-2">
+                 <div className="animate-[scrollLog_12s_linear_infinite] space-y-2">
                     <p className="flex justify-between items-center"><span className="opacity-50">10:42:01</span> <span>INITIALIZING_SCAN_ENG...</span> <span className="font-black text-emerald-500">READY</span></p>
                     <p className="flex justify-between items-center"><span className="opacity-50">10:42:02</span> <span>EXTRACTING_PHENO_DATA...</span> <span className="font-black text-emerald-500">OK</span></p>
                     <p className="flex justify-between items-center"><span className="opacity-50">10:42:04</span> <span>SEQ_GENUS_MARKERS...</span> <span className="animate-pulse font-black">MATCHING</span></p>
@@ -504,7 +531,6 @@ const App: React.FC = () => {
               </div>
            </div>
 
-           {/* Airy status bar */}
            <div className="absolute bottom-24 flex items-center gap-4 px-10 py-4 bg-emerald-50 rounded-full shadow-lg border-2 border-white">
               <span className="text-[11px] font-black text-[#00D09C] uppercase tracking-widest">Compiling Database</span>
               <div className="flex gap-1.5">
@@ -586,7 +612,7 @@ const App: React.FC = () => {
           100% { transform: translateY(-200px); }
         }
       `}</style>
-    </div>
+    </Layout>
   );
 };
 
