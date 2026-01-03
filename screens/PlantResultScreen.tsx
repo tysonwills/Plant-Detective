@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { ChevronLeft, Droplets, Sun, Sprout, ShieldAlert, Heart, Share2, Info, Lightbulb, CheckCircle, Leaf, Plus, Check, ChevronRight, Thermometer, AlertCircle, Sparkles, MapPin, ShoppingBag, Camera, X, RefreshCw, Bell, Clock, Shovel, Scissors, Calendar, Wind, FlaskConical, PartyPopper, Beaker, Mountain, Zap, Activity, Ruler, MoveUp, BarChart3, Waves, Sparkle, Wind as MistIcon, CheckCircle2, Scan, AlertTriangle, Stethoscope, HelpCircle, Copy, ArrowRight, MessageCircle, Twitter, Facebook, Link, Microscope } from 'lucide-react';
+import { ChevronLeft, Droplets, Sun, Sprout, ShieldAlert, Heart, Share2, Info, Lightbulb, CheckCircle, Leaf, Plus, Check, ChevronRight, Thermometer, AlertCircle, Sparkles, MapPin, ShoppingBag, Camera, X, RefreshCw, Bell, Clock, Shovel, Scissors, Calendar, Wind, FlaskConical, PartyPopper, Beaker, Mountain, Zap, Activity, Ruler, MoveUp, BarChart3, Waves, Sparkle, Wind as MistIcon, CheckCircle2, Scan, AlertTriangle, Stethoscope, HelpCircle, Copy, ArrowRight, MessageCircle, Twitter, Facebook, Link, Microscope, Search } from 'lucide-react';
 import { IdentificationResponse, WikiImage, Reminder } from '../types';
 
 interface PlantResultScreenProps {
@@ -10,7 +10,7 @@ interface PlantResultScreenProps {
   onBack: () => void;
   onAddReminder?: void;
   onCompleteTask?: (type: string) => void;
-  onSearchSimilar?: (query: string) => void;
+  onSearchSimilar?: (plant: any) => void;
   onFindStores?: () => void;
   hideAddButton?: boolean;
   reminders?: Reminder[];
@@ -52,7 +52,6 @@ const PlantResultScreen: React.FC<PlantResultScreenProps> = ({
       newFavorites = favorites.filter((f: any) => f.scientificName !== identification.scientificName);
       showToast('Removed from Favorites', 'info');
     } else {
-      // PERSIST FULL DATA: We save the entire gemini response and wiki images
       const newFav = {
         scientificName: identification.scientificName,
         commonName: identification.commonName,
@@ -81,7 +80,7 @@ const PlantResultScreen: React.FC<PlantResultScreenProps> = ({
         showToast('Shared successfully!', 'success');
       } catch (err) {
         console.log('Share cancelled or failed', err);
-        setShowShareModal(true); // Fallback to custom modal if cancelled or fails
+        setShowShareModal(true);
       }
     } else {
       setShowShareModal(true);
@@ -101,12 +100,10 @@ const PlantResultScreen: React.FC<PlantResultScreenProps> = ({
     setActiveImg((prev) => (prev - 1 + images.length) % images.length);
   };
 
-  // Limit to exactly 4 relatives for a perfect 2x2 grid
   const displayRelatives = similarPlants.slice(0, 4);
 
   return (
     <div className="animate-in fade-in slide-in-from-right-4 duration-500 pb-32 bg-[#F8FAFB] relative">
-      {/* Aesthetic Toast Notification */}
       {toast && (
         <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[60] animate-in slide-in-from-top-4 fade-in duration-300">
           <div className={`px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-3 backdrop-blur-md border border-white/20 ${
@@ -118,7 +115,6 @@ const PlantResultScreen: React.FC<PlantResultScreenProps> = ({
         </div>
       )}
 
-      {/* Top Action Bar */}
       <div className="absolute top-12 left-0 right-0 z-20 px-6 flex justify-between items-center">
         <button 
           onClick={onBack}
@@ -142,7 +138,6 @@ const PlantResultScreen: React.FC<PlantResultScreenProps> = ({
         </div>
       </div>
 
-      {/* Hero Image Slider */}
       <div className="relative h-[55vh] bg-gray-900 group/slider overflow-hidden">
         {images.length > 0 ? (
           <>
@@ -193,7 +188,6 @@ const PlantResultScreen: React.FC<PlantResultScreenProps> = ({
         )}
       </div>
 
-      {/* Content Body */}
       <div className="px-8 -mt-12 relative z-10">
         <div className="mb-10">
           <div className="flex items-center gap-2 mb-4">
@@ -214,7 +208,6 @@ const PlantResultScreen: React.FC<PlantResultScreenProps> = ({
           </p>
         </div>
 
-        {/* Unified Vital Statistics Section */}
         <div className="mb-12">
           <h2 className="text-2xl font-black text-gray-900 tracking-tight mb-8">Vital Statistics</h2>
           <div className="flex flex-col gap-4">
@@ -222,7 +215,7 @@ const PlantResultScreen: React.FC<PlantResultScreenProps> = ({
               label="Watering Schedule" 
               value={`Every ${care.wateringDaysInterval || 7} Days`} 
               totalSquares={care.wateringDaysInterval || 7}
-              filledSquares={1} // Day 1 of the cycle
+              filledSquares={1}
               icon={<Droplets size={22} />} 
               color="blue"
               howTo={`Drench the soil thoroughly until water escapes the drainage holes. ${care.watering}`}
@@ -248,7 +241,6 @@ const PlantResultScreen: React.FC<PlantResultScreenProps> = ({
           </div>
         </div>
 
-        {/* Biological Protocol Section */}
         <div className="mb-12">
           <h2 className="text-2xl font-black text-gray-900 tracking-tight mb-6">Biological Protocol</h2>
           <div className="space-y-6">
@@ -275,7 +267,6 @@ const PlantResultScreen: React.FC<PlantResultScreenProps> = ({
           </div>
         </div>
 
-        {/* Toxicity Alert */}
         {identification.isToxic && (
           <div className="bg-rose-50/50 p-7 rounded-[2.5rem] flex flex-col gap-5 mb-12 border-2 border-rose-100/50">
             <div className="flex gap-4 items-center">
@@ -310,13 +301,11 @@ const PlantResultScreen: React.FC<PlantResultScreenProps> = ({
           </div>
         )}
 
-        {/* Thermal Comfort & Growth Scale Cards */}
         <div className="mb-12 grid grid-cols-1 gap-6">
           <TemperatureRangeCard min={care.minTemp || 15} max={care.maxTemp || 30} descriptive={care.temperature} />
           <HeightScaleCard height={care.estimatedHeight || "1m"} />
         </div>
 
-        {/* Common Problems Section */}
         {commonProblems.length > 0 && (
           <div className="mb-16">
             <h2 className="text-2xl font-black text-gray-900 mb-8 flex items-center gap-4">
@@ -357,7 +346,6 @@ const PlantResultScreen: React.FC<PlantResultScreenProps> = ({
           </div>
         )}
 
-        {/* Botanical Composition / Growth Essentials */}
         <div className="mb-16">
           <h2 className="text-2xl font-black text-gray-900 mb-8 flex items-center gap-4">
             <div className="bg-[#00D09C] p-2 rounded-xl text-white shadow-lg"><Beaker size={20} /></div>
@@ -398,19 +386,18 @@ const PlantResultScreen: React.FC<PlantResultScreenProps> = ({
           </div>
         </div>
 
-        {/* Genetic Relatives Section - Interactive Profile Deep-linking */}
         {displayRelatives.length > 0 && (
           <div className="mb-16">
             <h2 className="text-2xl font-black text-gray-900 mb-8 flex items-center gap-4">
               <div className="bg-[#00D09C] p-2 rounded-xl text-white shadow-lg"><Microscope size={20} /></div>
               Genetic Relatives
             </h2>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-5">
               {displayRelatives.map((plant, i) => (
                 <button 
                   key={i}
-                  onClick={() => onSearchSimilar?.(plant.scientificName || plant.name)}
-                  className="flex flex-col bg-white rounded-[2.5rem] overflow-hidden border border-gray-100 shadow-sm active:scale-[0.97] transition-all text-left group h-full relative"
+                  onClick={() => onSearchSimilar?.(plant)}
+                  className="flex flex-col bg-white rounded-[2.5rem] overflow-hidden border border-gray-100 shadow-sm active:scale-[0.97] transition-all text-left group h-full relative ring-1 ring-gray-100 hover:ring-[#00D09C]/40"
                 >
                   <div className="aspect-[4/5] w-full bg-gray-100 relative overflow-hidden">
                     <img 
@@ -418,19 +405,24 @@ const PlantResultScreen: React.FC<PlantResultScreenProps> = ({
                       alt={plant.name}
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col items-center justify-center p-4">
-                       <Scan className="text-white mb-2" size={24} />
-                       <span className="text-[10px] font-black text-white uppercase tracking-widest text-center">Analyze Profile</span>
+                    <div className="absolute inset-0 bg-gradient-to-t from-emerald-900/90 via-emerald-800/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col items-center justify-center p-6 text-center">
+                       <div className="bg-white/20 backdrop-blur-md p-3 rounded-2xl mb-3 shadow-xl ring-1 ring-white/30">
+                          <Search className="text-white" size={24} />
+                       </div>
+                       <span className="text-[9px] font-black text-white uppercase tracking-[0.2em] leading-tight">View Full Care Profile</span>
                     </div>
                   </div>
-                  <div className="p-5 flex flex-col flex-1">
-                    <h4 className="font-black text-gray-900 text-sm truncate mb-0.5 leading-tight group-hover:text-[#00D09C] transition-colors">{plant.name}</h4>
+                  <div className="p-5 flex flex-col flex-1 bg-white relative z-10">
+                    <h4 className="font-black text-gray-900 text-[13px] truncate mb-0.5 leading-tight group-hover:text-[#00D09C] transition-colors">{plant.name}</h4>
                     <p className="text-[9px] text-gray-400 font-bold italic mb-4 truncate tracking-tight">{plant.scientificName}</p>
                     
-                    <div className="mt-auto pt-3 border-t border-gray-50 flex items-center justify-between">
-                       <span className="text-[8px] font-black text-gray-300 uppercase tracking-widest group-hover:text-[#00D09C] transition-colors">Botanical Info</span>
-                       <div className="text-[#00D09C]">
-                         <ArrowRight size={14} strokeWidth={3} />
+                    <div className="mt-auto pt-4 border-t border-gray-50 flex items-center justify-between">
+                       <div className="flex items-center gap-1.5 text-[#00D09C]">
+                          <Activity size={10} strokeWidth={3} />
+                          <span className="text-[8px] font-black uppercase tracking-widest">Profile Available</span>
+                       </div>
+                       <div className="text-[#00D09C] group-hover:translate-x-1 transition-transform">
+                         <ChevronRight size={14} strokeWidth={3} />
                        </div>
                     </div>
                   </div>
@@ -440,7 +432,6 @@ const PlantResultScreen: React.FC<PlantResultScreenProps> = ({
           </div>
         )}
 
-        {/* Final Action Buttons */}
         <div className="flex flex-col gap-6 mb-12">
           {!hideAddButton && (
             <button 
@@ -508,7 +499,6 @@ const ShareModal: React.FC<ShareModalProps> = ({ plantName, scientificName, onCl
   };
 
   const shareFacebook = () => {
-    // Standard Facebook sharer endpoint, ensuring URL is correctly encoded
     const fbUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`;
     window.open(fbUrl, 'fb-share-dialog', 'width=626,height=436');
     onClose();

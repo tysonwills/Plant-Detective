@@ -9,13 +9,14 @@ import LoginScreen from './screens/LoginScreen';
 import PlantResultScreen from './screens/PlantResultScreen';
 import DiagnosisResultScreen from './screens/DiagnosisResultScreen';
 import FavoritesScreen from './screens/FavoritesScreen';
+import ProfileScreen from './screens/ProfileScreen';
 import ChatScreen from './screens/ChatScreen';
 import ReminderModal from './components/ReminderModal';
 import SplashScreen from './screens/SplashScreen';
 import { identifyPlant, diagnoseHealth, getPlantInfoByName } from './services/geminiService';
 import { getWikiImages, getWikiThumbnail } from './services/wikiService';
 import { IdentificationResponse, WikiImage, UserProfile, DiagnosticResult, Reminder } from './types';
-import { Loader2, Droplets, X, Sprout, CheckCircle, ArrowRight, Crown, Check, ShieldCheck, Zap, Sparkles, Leaf, MapPin, AlertCircle, Bell, BellRing, Clock, PartyPopper, Scan, Activity, Microscope } from 'lucide-react';
+import { Loader2, Droplets, X, Sprout, CheckCircle, ArrowRight, Crown, Check, ShieldCheck, Zap, Sparkles, Leaf, MapPin, AlertCircle, Bell, BellRing, Clock, PartyPopper, Scan, Activity, Microscope, Fingerprint, Search } from 'lucide-react';
 
 const App: React.FC = () => {
   const [showSplash, setShowSplash] = useState(true);
@@ -191,6 +192,19 @@ const App: React.FC = () => {
     }
   };
 
+  const handleLogout = () => {
+    setUser(null);
+    localStorage.removeItem('flora_user');
+    setActiveTab('home');
+  };
+
+  const handleToggleNotifications = () => {
+    if (!user) return;
+    const updated = { ...user, notificationsEnabled: !user.notificationsEnabled };
+    setUser(updated);
+    localStorage.setItem('flora_user', JSON.stringify(updated));
+  };
+
   const handleCameraClick = () => {
     fileInputRef.current?.click();
   };
@@ -256,8 +270,6 @@ const App: React.FC = () => {
     const updatedPlants = myPlants.map(p => {
       if (p.id === plantId) {
         let status = p.status;
-        
-        // Ensure repeat tasks overwrite last data by updating the lastCare object
         const lastCare = { ...(p.lastCare || {}), [taskType]: timestamp };
         
         if (taskType.includes('Water')) {
@@ -309,14 +321,27 @@ const App: React.FC = () => {
     });
   };
 
+  const handleViewRelative = async (relative: any) => {
+    // If the relative already has full details, use them immediately
+    if (relative.identification && relative.care) {
+      setIdResult(relative as IdentificationResponse);
+      const images = await getWikiImages(relative.identification.scientificName, relative.identification.genus);
+      setWikiImages(images);
+      setActiveTab('id-result');
+      // Scroll to top
+      window.scrollTo(0, 0);
+    } else {
+      // Fallback to name search if for some reason the relative data is sparse
+      handlePlantSearch(relative.scientificName || relative.name);
+    }
+  };
+
   const handleViewFavorite = (item: any) => {
     if (item.fullData) {
-      // INSTANT LOAD: Use pre-analyzed cached data
       setIdResult(item.fullData);
       setWikiImages(item.wikiImages || []);
       setActiveTab('id-result');
     } else {
-      // FALLBACK: For old favorites that only had a name
       handlePlantSearch(item.commonName);
     }
   };
@@ -390,9 +415,20 @@ const App: React.FC = () => {
     if (activeTab === 'my-plants') return <MyPlantsScreen plants={myPlants} reminders={reminders} completions={completions} onAddClick={handleCameraClick} onManageReminders={(id, name) => setReminderPlant({ id, name })} onPlantClick={(p) => { setIdResult(p.fullData || null); if (p.fullData) { setWikiImages(p.wikiImages || []); setActiveTab('id-result'); } }} onRemovePlant={handleRemovePlant} onCompleteTask={handleCompleteTask} />;
     if (activeTab === 'diagnose') return <DiagnosticsScreen onStartDiagnosis={handleCameraClick} />;
     if (activeTab === 'favorites') return <FavoritesScreen onPlantClick={handleViewFavorite} />;
+    if (activeTab === 'profile') return <ProfileScreen 
+      user={user} 
+      stats={{ 
+        plants: myPlants.length, 
+        favorites: JSON.parse(localStorage.getItem('flora_favorites') || '[]').length, 
+        scans: JSON.parse(localStorage.getItem('flora_diag_history') || '[]').length 
+      }} 
+      onLogout={handleLogout} 
+      onNavigate={handleNavigate} 
+      onToggleNotifications={handleToggleNotifications}
+    />;
     if (activeTab === 'stores') return <MapScreen />;
     if (activeTab === 'chat') return <ChatScreen />;
-    if (activeTab === 'id-result' && idResult) return <PlantResultScreen data={idResult} images={wikiImages} onAddToGarden={(n, s, i) => addPlantToGarden({ name: n, species: s, image: i, fullData: idResult, wikiImages })} onBack={() => setActiveTab('home')} onFindStores={() => setActiveTab('stores')} onSearchSimilar={handlePlantSearch} />;
+    if (activeTab === 'id-result' && idResult) return <PlantResultScreen data={idResult} images={wikiImages} onAddToGarden={(n, s, i) => addPlantToGarden({ name: n, species: s, image: i, fullData: idResult, wikiImages })} onBack={() => setActiveTab('home')} onFindStores={() => setActiveTab('stores')} onSearchSimilar={handleViewRelative} />;
     if (activeTab === 'diag-result' && diagResult) return <DiagnosisResultScreen result={diagResult} onBack={() => setActiveTab('diagnose')} />;
     return <HomeScreen onNavigate={handleNavigate} />;
   };
@@ -408,55 +444,69 @@ const App: React.FC = () => {
       isSubscribed={user?.isSubscribed}
     >
       {isProcessing && (
-        <div className="fixed inset-0 z-[100] bg-white/95 backdrop-blur-xl flex flex-col items-center justify-center p-12 text-center animate-in fade-in duration-500 overflow-hidden">
-           {/* High-Tech Botanical Scanner UI */}
-           <div className="absolute inset-0 opacity-5 pointer-events-none" 
-                style={{ backgroundImage: 'radial-gradient(#00D09C 1.5px, transparent 1.5px)', backgroundSize: '30px 30px' }}></div>
+        <div className="fixed inset-0 z-[100] bg-white/95 backdrop-blur-3xl flex flex-col items-center justify-center p-12 text-center animate-in fade-in duration-500 overflow-hidden">
+           <div className="absolute inset-0 opacity-10 pointer-events-none" 
+                style={{ backgroundImage: 'radial-gradient(#00D09C 1px, transparent 1px)', backgroundSize: '40px 40px' }}></div>
            
-           <div className="relative mb-12">
-              {/* Outer Hexagon / Circle HUD */}
-              <div className="w-48 h-48 border-[6px] border-emerald-50 rounded-[3rem] flex items-center justify-center relative shadow-[0_0_50px_rgba(0,208,156,0.1)]">
-                 <div className="absolute inset-0 border-[6px] border-[#00D09C] rounded-[3rem] animate-[spin_10s_linear_infinite] border-t-transparent border-b-transparent opacity-40"></div>
+           <div className="relative mb-16 scale-110">
+              <div className="w-56 h-56 border-2 border-emerald-50 rounded-full flex items-center justify-center relative shadow-[0_0_80px_rgba(0,208,156,0.15)] ring-1 ring-emerald-100/30">
                  
-                 {/* Scanning Line */}
-                 <div className="absolute left-4 right-4 h-1 bg-gradient-to-r from-transparent via-[#00D09C] to-transparent animate-[bounce_3s_infinite] shadow-[0_0_15px_#00D09C]"></div>
+                 <div className="absolute inset-0 border-4 border-dashed border-[#00D09C] rounded-full animate-[spin_12s_linear_infinite] opacity-20"></div>
+                 <div className="absolute inset-4 border-2 border-[#00D09C] rounded-full animate-[spin_8s_linear_reverse_infinite] border-t-transparent border-b-transparent opacity-40"></div>
+                 <div className="absolute inset-10 border border-[#00D09C] rounded-full animate-[spin_4s_linear_infinite] border-l-transparent border-r-transparent opacity-60"></div>
                  
-                 <div className="bg-emerald-50 p-8 rounded-[2.5rem] relative z-10">
-                    <Sprout className="text-[#00D09C] animate-pulse" size={56} strokeWidth={2.5} />
+                 <div className="absolute inset-x-8 h-[2px] bg-gradient-to-r from-transparent via-[#00D09C] to-transparent animate-[scanLine_2.5s_ease-in-out_infinite] shadow-[0_0_20px_#00D09C] z-20"></div>
+                 
+                 <div className="bg-white/80 backdrop-blur-md p-10 rounded-full relative z-10 border-2 border-emerald-50 shadow-xl overflow-hidden group">
+                    <Sprout className="text-[#00D09C] animate-pulse drop-shadow-md" size={64} strokeWidth={2} />
+                    <div className="absolute inset-0 bg-emerald-400/5 animate-pulse"></div>
                  </div>
 
-                 {/* Orbiting Tech Bits */}
-                 <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white p-2 rounded-xl shadow-md border border-gray-100">
-                    <Scan className="text-[#00D09C]" size={16} />
-                 </div>
-                 <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 bg-white p-2 rounded-xl shadow-md border border-gray-100">
-                    <Activity className="text-[#00D09C]" size={16} />
-                 </div>
+                 <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-[#00D09C] rounded-tl-2xl opacity-80"></div>
+                 <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-[#00D09C] rounded-tr-2xl opacity-80"></div>
+                 <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-[#00D09C] rounded-bl-2xl opacity-80"></div>
+                 <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-[#00D09C] rounded-br-2xl opacity-80"></div>
+              </div>
+              
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-full mb-4 bg-white/90 backdrop-blur-md px-4 py-2 rounded-2xl shadow-lg border border-emerald-100 flex items-center gap-2 animate-bounce">
+                 <Fingerprint className="text-[#00D09C]" size={16} />
+                 <span className="text-[10px] font-black uppercase tracking-widest text-emerald-700">Sequence Matching</span>
               </div>
            </div>
 
-           <div className="max-w-xs">
+           <div className="max-w-xs relative z-10">
               <div className="flex items-center justify-center gap-3 mb-4">
-                 <Microscope size={20} className="text-[#00D09C]" />
-                 <h3 className="text-3xl font-black text-gray-900 tracking-tighter">AI Botanical Lab</h3>
+                 <div className="bg-emerald-500 p-2 rounded-xl text-white shadow-lg shadow-emerald-200">
+                    <Microscope size={22} />
+                 </div>
+                 <h3 className="text-3xl font-black text-gray-900 tracking-tighter leading-none">Botanical Lab</h3>
               </div>
-              <p className="text-gray-400 font-bold italic text-sm mb-8 leading-relaxed">
-                 Sequencing phenotypic traits and environmental adaptations...
+              <p className="text-gray-400 font-bold italic text-sm mb-10 leading-relaxed px-4">
+                 Decoding cellular structures and sequencing taxonomic markers...
               </p>
 
-              {/* Status "Log" ticker */}
-              <div className="bg-gray-50/80 p-5 rounded-3xl border border-gray-100 font-mono text-[9px] text-gray-500 text-left space-y-1.5 shadow-inner">
-                 <p className="flex justify-between"><span>> CLASSIFYING_GENUS</span> <span className="text-[#00D09C]">OK</span></p>
-                 <p className="flex justify-between"><span>> MAPPING_CELLULAR_STRUCTURE</span> <span className="text-[#00D09C]">IN_PROGRESS</span></p>
-                 <p className="flex justify-between"><span>> ANALYZING_TOXICITY_MARKERS</span> <span className="animate-pulse">PENDING...</span></p>
+              <div className="bg-gray-900 p-6 rounded-[2.5rem] font-mono text-[9px] text-emerald-400 text-left space-y-2 shadow-2xl border-4 border-gray-800 h-32 overflow-hidden relative group">
+                 <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-gray-900 to-transparent z-10"></div>
+                 <div className="animate-[scrollLog_15s_linear_infinite] space-y-1.5">
+                    <p className="flex justify-between items-center"><span className="opacity-60">10:42:01</span> <span>INITIALIZING_SCAN_ENG...</span> <span className="text-white">DONE</span></p>
+                    <p className="flex justify-between items-center"><span className="opacity-60">10:42:02</span> <span>EXTRACTING_PHENO_DATA...</span> <span className="text-white">DONE</span></p>
+                    <p className="flex justify-between items-center"><span className="opacity-60">10:42:04</span> <span>SEQ_GENUS_MARKERS...</span> <span className="animate-pulse">MATCHING</span></p>
+                    <p className="flex justify-between items-center"><span className="opacity-60">10:42:05</span> <span>MAPPING_VENATION...</span> <span className="text-emerald-200">92%</span></p>
+                    <p className="flex justify-between items-center"><span className="opacity-60">10:42:07</span> <span>CROSS_REF_TAXONOMY...</span> <span className="text-white">RUNNING</span></p>
+                    <p className="flex justify-between items-center"><span className="opacity-60">10:42:08</span> <span>ENV_FACTOR_CALC...</span> <span className="text-emerald-200">VALIDATING</span></p>
+                    <p className="flex justify-between items-center"><span className="opacity-60">10:42:10</span> <span>TOX_ANALYSIS_SYNC...</span> <span className="text-white">OK</span></p>
+                    <p className="flex justify-between items-center"><span className="opacity-60">10:42:12</span> <span>FETCHING_CARE_SCHEMA...</span> <span className="animate-pulse">LINKING</span></p>
+                 </div>
               </div>
            </div>
 
-           {/* Animated progress dots */}
-           <div className="absolute bottom-20 flex gap-1.5">
-              {[...Array(3)].map((_, i) => (
-                <div key={i} className="w-2 h-2 bg-[#00D09C] rounded-full animate-bounce" style={{ animationDelay: `${i * 0.2}s` }} />
-              ))}
+           <div className="absolute bottom-24 flex items-center gap-4 px-8 py-3 bg-white rounded-full shadow-lg border border-gray-100">
+              <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Compiling Database</span>
+              <div className="flex gap-1">
+                {[...Array(3)].map((_, i) => (
+                  <div key={i} className="w-2 h-2 bg-emerald-500 rounded-full animate-bounce" style={{ animationDelay: `${i * 0.2}s` }} />
+                ))}
+              </div>
            </div>
         </div>
       )}
@@ -518,7 +568,20 @@ const App: React.FC = () => {
           onSave={handleSaveReminder} 
         />
       )}
-    </Layout>
+
+      <style>{`
+        @keyframes scanLine {
+          0%, 100% { top: 20%; opacity: 0; }
+          10% { opacity: 1; }
+          90% { opacity: 1; }
+          100% { top: 80%; opacity: 0; }
+        }
+        @keyframes scrollLog {
+          0% { transform: translateY(0); }
+          100% { transform: translateY(-150px); }
+        }
+      `}</style>
+    </div>
   );
 };
 

@@ -1,8 +1,65 @@
+
 import { GoogleGenAI, Type, Chat } from "@google/genai";
 import { IdentificationResponse, DiagnosticResult, GardenCenter } from "../types";
 
 const cleanJsonResponse = (text: string) => {
   return text.replace(/```json/g, "").replace(/```/g, "").trim();
+};
+
+const identificationSchema = {
+  type: Type.OBJECT,
+  properties: {
+    identification: {
+      type: Type.OBJECT,
+      properties: {
+        scientificName: { type: Type.STRING },
+        commonName: { type: Type.STRING },
+        genus: { type: Type.STRING },
+        family: { type: Type.STRING },
+        confidence: { type: Type.NUMBER },
+        description: { type: Type.STRING },
+        isToxic: { type: Type.BOOLEAN },
+        toxicityWarning: { type: Type.STRING },
+        toxicityAdvice: { type: Type.STRING }
+      },
+      required: ["scientificName", "commonName", "genus", "isToxic"]
+    },
+    care: {
+      type: Type.OBJECT,
+      properties: {
+        watering: { type: Type.STRING },
+        wateringDaysInterval: { type: Type.INTEGER },
+        sunlight: { type: Type.STRING },
+        soil: { type: Type.STRING },
+        temperature: { type: Type.STRING },
+        minTemp: { type: Type.INTEGER },
+        maxTemp: { type: Type.INTEGER },
+        estimatedHeight: { type: Type.STRING },
+        humidity: { type: Type.STRING },
+        fertilizer: { type: Type.STRING },
+        fertilizerMonthsActive: { type: Type.ARRAY, items: { type: Type.INTEGER } },
+        fertilizerDaysInterval: { type: Type.INTEGER },
+        pruning: { type: Type.STRING },
+        cleaningDaysInterval: { type: Type.INTEGER },
+        seasonalCare: { type: Type.STRING },
+        homeRemedies: { type: Type.STRING },
+        hints: { type: Type.ARRAY, items: { type: Type.STRING } },
+        bestPlacement: { type: Type.STRING }
+      },
+      required: ["watering", "wateringDaysInterval", "sunlight", "soil", "temperature", "humidity", "fertilizer", "fertilizerMonthsActive", "fertilizerDaysInterval", "cleaningDaysInterval", "hints", "bestPlacement", "minTemp", "maxTemp", "estimatedHeight"]
+    },
+    commonProblems: {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          problem: { type: Type.STRING },
+          solution: { type: Type.STRING }
+        },
+        required: ["problem", "solution"]
+      }
+    }
+  }
 };
 
 export const identifyPlant = async (base64Image: string): Promise<IdentificationResponse> => {
@@ -12,7 +69,7 @@ export const identifyPlant = async (base64Image: string): Promise<Identification
     contents: {
       parts: [
         { inlineData: { mimeType: "image/jpeg", data: base64Image } },
-        { text: "Identify this plant with extreme precision. Provide the most accurate common name and full scientific name (Genus species). For the 'commonProblems', provide at least 3 detailed issues specific to this species, each with a 'problem' description and a detailed, step-by-step 'solution'. For toxicity, if toxic, include 'toxicityAdvice' with emergency steps. Include care parameters: wateringDaysInterval (int), fertilizerMonthsActive (array of ints 0-11), fertilizerDaysInterval (int), cleaningDaysInterval (int), minTemp (C), maxTemp (C), and estimatedHeight ('30cm - 1m'). Return strictly valid JSON." }
+        { text: "Identify this plant. For the main result and for each 'similarPlant' entry, provide full botanical data including identification details, complete care parameters (intervals, temps, height), and common problems. This allows for instant navigation between related species. Return strictly valid JSON." }
       ]
     },
     config: {
@@ -20,56 +77,7 @@ export const identifyPlant = async (base64Image: string): Promise<Identification
       responseSchema: {
         type: Type.OBJECT,
         properties: {
-          identification: {
-            type: Type.OBJECT,
-            properties: {
-              scientificName: { type: Type.STRING },
-              commonName: { type: Type.STRING },
-              genus: { type: Type.STRING },
-              family: { type: Type.STRING },
-              confidence: { type: Type.NUMBER },
-              description: { type: Type.STRING },
-              isToxic: { type: Type.BOOLEAN },
-              toxicityWarning: { type: Type.STRING },
-              toxicityAdvice: { type: Type.STRING }
-            },
-            required: ["scientificName", "commonName", "genus", "isToxic"]
-          },
-          care: {
-            type: Type.OBJECT,
-            properties: {
-              watering: { type: Type.STRING },
-              wateringDaysInterval: { type: Type.INTEGER },
-              sunlight: { type: Type.STRING },
-              soil: { type: Type.STRING },
-              temperature: { type: Type.STRING },
-              minTemp: { type: Type.INTEGER },
-              maxTemp: { type: Type.INTEGER },
-              estimatedHeight: { type: Type.STRING },
-              humidity: { type: Type.STRING },
-              fertilizer: { type: Type.STRING },
-              fertilizerMonthsActive: { type: Type.ARRAY, items: { type: Type.INTEGER } },
-              fertilizerDaysInterval: { type: Type.INTEGER },
-              pruning: { type: Type.STRING },
-              cleaningDaysInterval: { type: Type.INTEGER },
-              seasonalCare: { type: Type.STRING },
-              homeRemedies: { type: Type.STRING },
-              hints: { type: Type.ARRAY, items: { type: Type.STRING } },
-              bestPlacement: { type: Type.STRING }
-            },
-            required: ["watering", "wateringDaysInterval", "sunlight", "soil", "temperature", "humidity", "fertilizer", "fertilizerMonthsActive", "fertilizerDaysInterval", "cleaningDaysInterval", "hints", "bestPlacement", "minTemp", "maxTemp", "estimatedHeight"]
-          },
-          commonProblems: {
-            type: Type.ARRAY,
-            items: {
-              type: Type.OBJECT,
-              properties: {
-                problem: { type: Type.STRING },
-                solution: { type: Type.STRING }
-              },
-              required: ["problem", "solution"]
-            }
-          },
+          ...identificationSchema.properties,
           similarPlants: {
             type: Type.ARRAY,
             items: {
@@ -77,7 +85,8 @@ export const identifyPlant = async (base64Image: string): Promise<Identification
               properties: {
                 name: { type: Type.STRING },
                 scientificName: { type: Type.STRING },
-                description: { type: Type.STRING }
+                description: { type: Type.STRING },
+                ...identificationSchema.properties
               },
               required: ["name", "scientificName"]
             }
@@ -96,62 +105,13 @@ export const getPlantInfoByName = async (plantName: string): Promise<Identificat
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const response = await ai.models.generateContent({
     model: "gemini-3-flash-preview",
-    contents: `Provide botanical information and care guide for: ${plantName}. Use highly accurate taxonomic data. For 'commonProblems', provide detailed descriptions and multi-step solutions. For toxicity, if toxic, include 'toxicityAdvice'. Return strictly valid JSON.`,
+    contents: `Provide botanical information and care guide for: ${plantName}. Also include 3 similar plants with their own basic care and identification data. Return strictly valid JSON.`,
     config: {
       responseMimeType: "application/json",
       responseSchema: {
         type: Type.OBJECT,
         properties: {
-          identification: {
-            type: Type.OBJECT,
-            properties: {
-              scientificName: { type: Type.STRING },
-              commonName: { type: Type.STRING },
-              genus: { type: Type.STRING },
-              family: { type: Type.STRING },
-              confidence: { type: Type.NUMBER },
-              description: { type: Type.STRING },
-              isToxic: { type: Type.BOOLEAN },
-              toxicityWarning: { type: Type.STRING },
-              toxicityAdvice: { type: Type.STRING }
-            },
-            required: ["scientificName", "commonName", "genus", "isToxic"]
-          },
-          care: {
-            type: Type.OBJECT,
-            properties: {
-              watering: { type: Type.STRING },
-              wateringDaysInterval: { type: Type.INTEGER },
-              sunlight: { type: Type.STRING },
-              soil: { type: Type.STRING },
-              temperature: { type: Type.STRING },
-              minTemp: { type: Type.INTEGER },
-              maxTemp: { type: Type.INTEGER },
-              estimatedHeight: { type: Type.STRING },
-              humidity: { type: Type.STRING },
-              fertilizer: { type: Type.STRING },
-              fertilizerMonthsActive: { type: Type.ARRAY, items: { type: Type.INTEGER } },
-              fertilizerDaysInterval: { type: Type.INTEGER },
-              pruning: { type: Type.STRING },
-              cleaningDaysInterval: { type: Type.INTEGER },
-              seasonalCare: { type: Type.STRING },
-              homeRemedies: { type: Type.STRING },
-              hints: { type: Type.ARRAY, items: { type: Type.STRING } },
-              bestPlacement: { type: Type.STRING }
-            },
-            required: ["watering", "wateringDaysInterval", "sunlight", "soil", "temperature", "humidity", "fertilizer", "fertilizerMonthsActive", "fertilizerDaysInterval", "cleaningDaysInterval", "hints", "bestPlacement", "minTemp", "maxTemp", "estimatedHeight"]
-          },
-          commonProblems: {
-            type: Type.ARRAY,
-            items: {
-              type: Type.OBJECT,
-              properties: {
-                problem: { type: Type.STRING },
-                solution: { type: Type.STRING }
-              },
-              required: ["problem", "solution"]
-            }
-          },
+          ...identificationSchema.properties,
           similarPlants: {
             type: Type.ARRAY,
             items: {
@@ -159,7 +119,8 @@ export const getPlantInfoByName = async (plantName: string): Promise<Identificat
               properties: {
                 name: { type: Type.STRING },
                 scientificName: { type: Type.STRING },
-                description: { type: Type.STRING }
+                description: { type: Type.STRING },
+                ...identificationSchema.properties
               },
               required: ["name", "scientificName"]
             }
@@ -219,7 +180,7 @@ export const findNearbyGardenCenters = async (lat: number, lng: number): Promise
     .map((chunk: any, index: number) => ({
       id: `real-${index}`,
       name: chunk.maps.title,
-      latitude: lat + (Math.random() - 0.5) * 0.01, // Minor jitter for mock display if no latlng returned
+      latitude: lat + (Math.random() - 0.5) * 0.01,
       longitude: lng + (Math.random() - 0.5) * 0.01,
       address: chunk.maps.uri || "Address available via link",
       website: chunk.maps.uri

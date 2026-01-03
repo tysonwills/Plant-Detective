@@ -1,3 +1,4 @@
+
 export interface PlantIdentification {
   scientificName: string;
   commonName: string;
@@ -7,7 +8,7 @@ export interface PlantIdentification {
   description: string;
   isToxic: boolean;
   toxicityWarning?: string;
-  toxicityAdvice?: string; // New field for ingestion/emergency steps
+  toxicityAdvice?: string;
 }
 
 export interface CareGuide {
@@ -21,7 +22,7 @@ export interface CareGuide {
   estimatedHeight?: string;
   humidity: string;
   fertilizer: string;
-  fertilizerMonthsActive: number[]; // Array of month indices 0-11
+  fertilizerMonthsActive: number[];
   fertilizerDaysInterval: number;
   pruning: string;
   cleaningDaysInterval: number;
@@ -40,7 +41,7 @@ export interface IdentificationResponse {
   identification: PlantIdentification;
   care: CareGuide;
   commonProblems: CommonProblem[];
-  similarPlants: Array<{
+  similarPlants: Array<Partial<IdentificationResponse> & {
     name: string;
     scientificName: string;
     description: string;
