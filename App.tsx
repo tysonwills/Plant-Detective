@@ -151,11 +151,18 @@ const App: React.FC = () => {
       await fn();
     } catch (err: any) {
       console.error("Botanical API Error:", err);
-      const isNotFound = err.message?.includes("Requested entity was not found") || err.message?.includes("not found");
       
-      if (isNotFound && window.aistudio?.openSelectKey) {
+      const errorMessage = err.message?.toLowerCase() || "";
+      const isQuotaExceeded = errorMessage.includes("quota") || errorMessage.includes("429") || err.status === 429;
+      const isNotFound = errorMessage.includes("requested entity was not found") || errorMessage.includes("not found");
+      
+      if ((isNotFound || isQuotaExceeded) && window.aistudio?.openSelectKey) {
         await window.aistudio.openSelectKey();
-        setError("API key refreshed. Please retry your botanical scan.");
+        if (isQuotaExceeded) {
+          setError("API Quota reached. Please select a valid API key from a paid GCP project to continue diagnosing your plants.");
+        } else {
+          setError("API connection reset. Please retry your botanical scan.");
+        }
       } else {
         setError(err.message || "Model connection lost. Please try again.");
       }
