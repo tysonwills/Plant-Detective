@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Layout from './components/Layout';
 import HomeScreen from './screens/HomeScreen';
@@ -7,13 +8,14 @@ import MapScreen from './screens/MapScreen';
 import LoginScreen from './screens/LoginScreen';
 import PlantResultScreen from './screens/PlantResultScreen';
 import DiagnosisResultScreen from './screens/DiagnosisResultScreen';
+import FavoritesScreen from './screens/FavoritesScreen';
 import ChatScreen from './screens/ChatScreen';
 import ReminderModal from './components/ReminderModal';
 import SplashScreen from './screens/SplashScreen';
 import { identifyPlant, diagnoseHealth, getPlantInfoByName } from './services/geminiService';
 import { getWikiImages, getWikiThumbnail } from './services/wikiService';
 import { IdentificationResponse, WikiImage, UserProfile, DiagnosticResult, Reminder } from './types';
-import { Loader2, Droplets, X, Sprout, CheckCircle, ArrowRight, Crown, Check, ShieldCheck, Zap, Sparkles, Leaf, MapPin, AlertCircle, Bell, BellRing, Clock, PartyPopper } from 'lucide-react';
+import { Loader2, Droplets, X, Sprout, CheckCircle, ArrowRight, Crown, Check, ShieldCheck, Zap, Sparkles, Leaf, MapPin, AlertCircle, Bell, BellRing, Clock, PartyPopper, Scan, Activity, Microscope } from 'lucide-react';
 
 const App: React.FC = () => {
   const [showSplash, setShowSplash] = useState(true);
@@ -158,7 +160,7 @@ const App: React.FC = () => {
   };
 
   const handleNavigate = (tab: string) => {
-    const proTabs = ['my-plants', 'diagnose', 'stores'];
+    const proTabs = ['my-plants', 'diagnose', 'stores', 'chat'];
     if (proTabs.includes(tab) && !user?.isSubscribed) {
       setActiveTab('upsell');
     } else {
@@ -307,6 +309,18 @@ const App: React.FC = () => {
     });
   };
 
+  const handleViewFavorite = (item: any) => {
+    if (item.fullData) {
+      // INSTANT LOAD: Use pre-analyzed cached data
+      setIdResult(item.fullData);
+      setWikiImages(item.wikiImages || []);
+      setActiveTab('id-result');
+    } else {
+      // FALLBACK: For old favorites that only had a name
+      handlePlantSearch(item.commonName);
+    }
+  };
+
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -375,9 +389,10 @@ const App: React.FC = () => {
     if (activeTab === 'home') return <HomeScreen isSubscribed={user.isSubscribed} onNavigate={handleNavigate} onSearch={handlePlantSearch} onScanClick={handleCameraClick} onAddToGarden={(n, s) => addPlantToGarden({ name: n, species: s })} />;
     if (activeTab === 'my-plants') return <MyPlantsScreen plants={myPlants} reminders={reminders} completions={completions} onAddClick={handleCameraClick} onManageReminders={(id, name) => setReminderPlant({ id, name })} onPlantClick={(p) => { setIdResult(p.fullData || null); if (p.fullData) { setWikiImages(p.wikiImages || []); setActiveTab('id-result'); } }} onRemovePlant={handleRemovePlant} onCompleteTask={handleCompleteTask} />;
     if (activeTab === 'diagnose') return <DiagnosticsScreen onStartDiagnosis={handleCameraClick} />;
+    if (activeTab === 'favorites') return <FavoritesScreen onPlantClick={handleViewFavorite} />;
     if (activeTab === 'stores') return <MapScreen />;
     if (activeTab === 'chat') return <ChatScreen />;
-    if (activeTab === 'id-result' && idResult) return <PlantResultScreen data={idResult} images={wikiImages} onAddToGarden={(n, s, i) => addPlantToGarden({ name: n, species: s, image: i, fullData: idResult, wikiImages })} onBack={() => setActiveTab('home')} onFindStores={() => setActiveTab('stores')} />;
+    if (activeTab === 'id-result' && idResult) return <PlantResultScreen data={idResult} images={wikiImages} onAddToGarden={(n, s, i) => addPlantToGarden({ name: n, species: s, image: i, fullData: idResult, wikiImages })} onBack={() => setActiveTab('home')} onFindStores={() => setActiveTab('stores')} onSearchSimilar={handlePlantSearch} />;
     if (activeTab === 'diag-result' && diagResult) return <DiagnosisResultScreen result={diagResult} onBack={() => setActiveTab('diagnose')} />;
     return <HomeScreen onNavigate={handleNavigate} />;
   };
@@ -393,14 +408,56 @@ const App: React.FC = () => {
       isSubscribed={user?.isSubscribed}
     >
       {isProcessing && (
-        <div className="fixed inset-0 z-[100] bg-white/80 backdrop-blur-md flex flex-col items-center justify-center p-12 text-center animate-in fade-in duration-300">
-           <div className="relative mb-8">
-              <div className="w-24 h-24 border-8 border-gray-100 rounded-full"></div>
-              <div className="absolute inset-0 w-24 h-24 border-t-8 border-[#00D09C] rounded-full animate-spin"></div>
-              <Sprout className="absolute inset-0 m-auto text-[#00D09C] animate-pulse" size={32} />
+        <div className="fixed inset-0 z-[100] bg-white/95 backdrop-blur-xl flex flex-col items-center justify-center p-12 text-center animate-in fade-in duration-500 overflow-hidden">
+           {/* High-Tech Botanical Scanner UI */}
+           <div className="absolute inset-0 opacity-5 pointer-events-none" 
+                style={{ backgroundImage: 'radial-gradient(#00D09C 1.5px, transparent 1.5px)', backgroundSize: '30px 30px' }}></div>
+           
+           <div className="relative mb-12">
+              {/* Outer Hexagon / Circle HUD */}
+              <div className="w-48 h-48 border-[6px] border-emerald-50 rounded-[3rem] flex items-center justify-center relative shadow-[0_0_50px_rgba(0,208,156,0.1)]">
+                 <div className="absolute inset-0 border-[6px] border-[#00D09C] rounded-[3rem] animate-[spin_10s_linear_infinite] border-t-transparent border-b-transparent opacity-40"></div>
+                 
+                 {/* Scanning Line */}
+                 <div className="absolute left-4 right-4 h-1 bg-gradient-to-r from-transparent via-[#00D09C] to-transparent animate-[bounce_3s_infinite] shadow-[0_0_15px_#00D09C]"></div>
+                 
+                 <div className="bg-emerald-50 p-8 rounded-[2.5rem] relative z-10">
+                    <Sprout className="text-[#00D09C] animate-pulse" size={56} strokeWidth={2.5} />
+                 </div>
+
+                 {/* Orbiting Tech Bits */}
+                 <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white p-2 rounded-xl shadow-md border border-gray-100">
+                    <Scan className="text-[#00D09C]" size={16} />
+                 </div>
+                 <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 bg-white p-2 rounded-xl shadow-md border border-gray-100">
+                    <Activity className="text-[#00D09C]" size={16} />
+                 </div>
+              </div>
            </div>
-           <h3 className="text-2xl font-black text-gray-900 mb-2">Analyzing Specimen</h3>
-           <p className="text-gray-400 font-bold italic text-sm">Cross-referencing global botanical databases...</p>
+
+           <div className="max-w-xs">
+              <div className="flex items-center justify-center gap-3 mb-4">
+                 <Microscope size={20} className="text-[#00D09C]" />
+                 <h3 className="text-3xl font-black text-gray-900 tracking-tighter">AI Botanical Lab</h3>
+              </div>
+              <p className="text-gray-400 font-bold italic text-sm mb-8 leading-relaxed">
+                 Sequencing phenotypic traits and environmental adaptations...
+              </p>
+
+              {/* Status "Log" ticker */}
+              <div className="bg-gray-50/80 p-5 rounded-3xl border border-gray-100 font-mono text-[9px] text-gray-500 text-left space-y-1.5 shadow-inner">
+                 <p className="flex justify-between"><span>> CLASSIFYING_GENUS</span> <span className="text-[#00D09C]">OK</span></p>
+                 <p className="flex justify-between"><span>> MAPPING_CELLULAR_STRUCTURE</span> <span className="text-[#00D09C]">IN_PROGRESS</span></p>
+                 <p className="flex justify-between"><span>> ANALYZING_TOXICITY_MARKERS</span> <span className="animate-pulse">PENDING...</span></p>
+              </div>
+           </div>
+
+           {/* Animated progress dots */}
+           <div className="absolute bottom-20 flex gap-1.5">
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="w-2 h-2 bg-[#00D09C] rounded-full animate-bounce" style={{ animationDelay: `${i * 0.2}s` }} />
+              ))}
+           </div>
         </div>
       )}
 

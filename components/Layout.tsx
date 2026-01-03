@@ -1,5 +1,6 @@
+
 import React from 'react';
-import { Home, ClipboardList, MapPin, User, Camera, Leaf, Crown, MessageSquare } from 'lucide-react';
+import { Home, ClipboardList, Heart, User, Camera, Leaf, Crown, MessageSquare } from 'lucide-react';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -11,7 +12,7 @@ interface LayoutProps {
 }
 
 const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, onCameraClick, userName, isSubscribed }) => {
-  const isMainTab = ['home', 'my-plants', 'diagnose', 'stores', 'profile', 'upsell', 'chat'].includes(activeTab);
+  const isMainTab = ['home', 'my-plants', 'diagnose', 'favorites', 'profile', 'upsell', 'chat'].includes(activeTab);
 
   return (
     <div className="flex flex-col min-h-screen max-w-md mx-auto bg-[#F8FAFB] shadow-xl relative overflow-hidden">
@@ -28,7 +29,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, onCa
             </div>
           </div>
           
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             {!isSubscribed && (
               <button 
                 onClick={() => setActiveTab('upsell')}
@@ -38,6 +39,14 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, onCa
                 <span className="text-[9px] font-black uppercase tracking-wider">Unlock Pro</span>
               </button>
             )}
+            
+            <button 
+              onClick={() => setActiveTab('favorites')}
+              className={`p-2.5 rounded-2xl transition-all active:scale-90 ${activeTab === 'favorites' ? 'bg-rose-50 text-rose-500 shadow-inner' : 'bg-white text-gray-400 shadow-sm border border-gray-50'}`}
+            >
+              <Heart size={20} className={activeTab === 'favorites' ? 'fill-rose-500' : ''} />
+            </button>
+
             <button 
               onClick={() => setActiveTab('profile')}
               className={`relative p-0.5 rounded-2xl border-2 transition-all active:scale-90 ${activeTab === 'profile' ? 'border-[#00D09C]' : 'border-white shadow-sm'}`}
@@ -95,7 +104,8 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, onCa
           />
           <TabItem 
             icon={<MessageSquare size={20} />} 
-            label="Chat" 
+            label="Ask Expert" 
+            isPro={!isSubscribed}
             active={activeTab === 'chat'} 
             onClick={() => setActiveTab('chat')} 
           />

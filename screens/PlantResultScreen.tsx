@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect, useRef } from 'react';
-import { ChevronLeft, Droplets, Sun, Sprout, ShieldAlert, Heart, Share2, Info, Lightbulb, CheckCircle, Leaf, Plus, Check, ChevronRight, Thermometer, AlertCircle, Sparkles, MapPin, ShoppingBag, Camera, X, RefreshCw, Bell, Clock, Shovel, Scissors, Calendar, Wind, FlaskConical, PartyPopper, Beaker, Mountain, Zap, Activity, Ruler, MoveUp, BarChart3, Waves, Sparkle, Wind as MistIcon, CheckCircle2, Scan, AlertTriangle, Stethoscope, HelpCircle, Copy } from 'lucide-react';
+import { ChevronLeft, Droplets, Sun, Sprout, ShieldAlert, Heart, Share2, Info, Lightbulb, CheckCircle, Leaf, Plus, Check, ChevronRight, Thermometer, AlertCircle, Sparkles, MapPin, ShoppingBag, Camera, X, RefreshCw, Bell, Clock, Shovel, Scissors, Calendar, Wind, FlaskConical, PartyPopper, Beaker, Mountain, Zap, Activity, Ruler, MoveUp, BarChart3, Waves, Sparkle, Wind as MistIcon, CheckCircle2, Scan, AlertTriangle, Stethoscope, HelpCircle, Copy, ArrowRight, MessageCircle, Twitter, Facebook, Link, Microscope } from 'lucide-react';
 import { IdentificationResponse, WikiImage, Reminder } from '../types';
 
 interface PlantResultScreenProps {
@@ -33,6 +34,7 @@ const PlantResultScreen: React.FC<PlantResultScreenProps> = ({
   const [activeImg, setActiveImg] = useState(0);
   const [isLiked, setIsLiked] = useState(false);
   const [showLightChecker, setShowLightChecker] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'info' } | null>(null);
 
   // Load and persist "Liked" state
@@ -50,11 +52,14 @@ const PlantResultScreen: React.FC<PlantResultScreenProps> = ({
       newFavorites = favorites.filter((f: any) => f.scientificName !== identification.scientificName);
       showToast('Removed from Favorites', 'info');
     } else {
+      // PERSIST FULL DATA: We save the entire gemini response and wiki images
       const newFav = {
         scientificName: identification.scientificName,
         commonName: identification.commonName,
         image: images[0]?.imageUrl,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        fullData: data,
+        wikiImages: images
       };
       newFavorites = [newFav, ...favorites];
       showToast('Added to Favorites!', 'success');
@@ -65,24 +70,21 @@ const PlantResultScreen: React.FC<PlantResultScreenProps> = ({
   };
 
   const handleShare = async () => {
-    const shareData = {
-      title: `Check out this ${identification.commonName}!`,
-      text: `I just identified a ${identification.commonName} (${identification.scientificName}) using FloraID. It's a beautiful ${identification.genus} plant!`,
-      url: window.location.href
-    };
-
     if (navigator.share) {
+      const shareData = {
+        title: `Check out this ${identification.commonName}!`,
+        text: `I just identified a ${identification.commonName} (${identification.scientificName}) using FloraID. It's a beautiful ${identification.genus} plant!`,
+        url: window.location.href
+      };
       try {
         await navigator.share(shareData);
         showToast('Shared successfully!', 'success');
       } catch (err) {
         console.log('Share cancelled or failed', err);
+        setShowShareModal(true); // Fallback to custom modal if cancelled or fails
       }
     } else {
-      // Fallback: Copy to clipboard
-      const textToCopy = `${shareData.title}\n${shareData.text}\n${shareData.url}`;
-      navigator.clipboard.writeText(textToCopy);
-      showToast('Link copied to clipboard!', 'success');
+      setShowShareModal(true);
     }
   };
 
@@ -98,6 +100,9 @@ const PlantResultScreen: React.FC<PlantResultScreenProps> = ({
   const handlePrev = () => {
     setActiveImg((prev) => (prev - 1 + images.length) % images.length);
   };
+
+  // Limit to exactly 4 relatives for a perfect 2x2 grid
+  const displayRelatives = similarPlants.slice(0, 4);
 
   return (
     <div className="animate-in fade-in slide-in-from-right-4 duration-500 pb-32 bg-[#F8FAFB] relative">
@@ -270,7 +275,7 @@ const PlantResultScreen: React.FC<PlantResultScreenProps> = ({
           </div>
         </div>
 
-        {/* Toxicity Alert - Repositioned and made less prominent */}
+        {/* Toxicity Alert */}
         {identification.isToxic && (
           <div className="bg-rose-50/50 p-7 rounded-[2.5rem] flex flex-col gap-5 mb-12 border-2 border-rose-100/50">
             <div className="flex gap-4 items-center">
@@ -393,32 +398,40 @@ const PlantResultScreen: React.FC<PlantResultScreenProps> = ({
           </div>
         </div>
 
-        {/* Genetic Relatives Section */}
-        {similarPlants.length > 0 && (
+        {/* Genetic Relatives Section - Interactive Profile Deep-linking */}
+        {displayRelatives.length > 0 && (
           <div className="mb-16">
             <h2 className="text-2xl font-black text-gray-900 mb-8 flex items-center gap-4">
-              <div className="bg-[#00D09C] p-2 rounded-xl text-white shadow-lg"><Sprout size={20} /></div>
+              <div className="bg-[#00D09C] p-2 rounded-xl text-white shadow-lg"><Microscope size={20} /></div>
               Genetic Relatives
             </h2>
-            <div className="flex gap-6 overflow-x-auto pb-8 -mx-8 px-8 scrollbar-hide">
-              {similarPlants.map((plant, i) => (
+            <div className="grid grid-cols-2 gap-4">
+              {displayRelatives.map((plant, i) => (
                 <button 
                   key={i}
                   onClick={() => onSearchSimilar?.(plant.scientificName || plant.name)}
-                  className="flex-shrink-0 w-64 bg-white rounded-[4rem] overflow-hidden border border-gray-100 shadow-sm active:scale-95 transition-all text-left group"
+                  className="flex flex-col bg-white rounded-[2.5rem] overflow-hidden border border-gray-100 shadow-sm active:scale-[0.97] transition-all text-left group h-full relative"
                 >
-                  <div className="h-44 w-full bg-gray-100 relative overflow-hidden">
+                  <div className="aspect-[4/5] w-full bg-gray-100 relative overflow-hidden">
                     <img 
                       src={plant.imageUrl || `https://picsum.photos/seed/${plant.name}/400/300`} 
                       alt={plant.name}
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000"
                     />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col items-center justify-center p-4">
+                       <Scan className="text-white mb-2" size={24} />
+                       <span className="text-[10px] font-black text-white uppercase tracking-widest text-center">Analyze Profile</span>
+                    </div>
                   </div>
-                  <div className="p-8">
-                    <h4 className="font-black text-gray-900 text-lg truncate mb-1 leading-tight">{plant.name}</h4>
-                    <p className="text-xs text-[#00D09C] font-bold italic mb-6 truncate opacity-70 tracking-tight">{plant.scientificName}</p>
-                    <div className="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-[0.25em] group-hover:text-[#00D09C] transition-colors">
-                      Discover <ChevronRight size={14} strokeWidth={3} className="text-[#00D09C]" />
+                  <div className="p-5 flex flex-col flex-1">
+                    <h4 className="font-black text-gray-900 text-sm truncate mb-0.5 leading-tight group-hover:text-[#00D09C] transition-colors">{plant.name}</h4>
+                    <p className="text-[9px] text-gray-400 font-bold italic mb-4 truncate tracking-tight">{plant.scientificName}</p>
+                    
+                    <div className="mt-auto pt-3 border-t border-gray-50 flex items-center justify-between">
+                       <span className="text-[8px] font-black text-gray-300 uppercase tracking-widest group-hover:text-[#00D09C] transition-colors">Botanical Info</span>
+                       <div className="text-[#00D09C]">
+                         <ArrowRight size={14} strokeWidth={3} />
+                       </div>
                     </div>
                   </div>
                 </button>
@@ -443,7 +456,7 @@ const PlantResultScreen: React.FC<PlantResultScreenProps> = ({
             className="w-full bg-white py-8 rounded-[3.5rem] text-[#00D09C] font-black text-xl border-4 border-[#00D09C] shadow-sm active:scale-95 transition-transform flex items-center justify-center gap-5"
           >
             <ShoppingBag size={30} strokeWidth={4} />
-            Find Local Supplies
+            Where to buy
           </button>
         </div>
       </div>
@@ -454,9 +467,112 @@ const PlantResultScreen: React.FC<PlantResultScreenProps> = ({
           onClose={() => setShowLightChecker(false)} 
         />
       )}
+
+      {showShareModal && (
+        <ShareModal 
+          plantName={identification.commonName} 
+          scientificName={identification.scientificName}
+          onClose={() => setShowShareModal(false)}
+          onToast={showToast}
+        />
+      )}
     </div>
   );
 };
+
+interface ShareModalProps {
+  plantName: string;
+  scientificName: string;
+  onClose: () => void;
+  onToast: (msg: string, type: 'success' | 'info') => void;
+}
+
+const ShareModal: React.FC<ShareModalProps> = ({ plantName, scientificName, onClose, onToast }) => {
+  const shareUrl = window.location.href;
+  const shareText = `Check out this ${plantName} (${scientificName}) I found on FloraID! 🌿`;
+
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(`${shareText} ${shareUrl}`);
+    onToast('Link copied to clipboard!', 'success');
+    onClose();
+  };
+
+  const shareWhatsApp = () => {
+    window.open(`https://wa.me/?text=${encodeURIComponent(shareText + ' ' + shareUrl)}`, '_blank');
+    onClose();
+  };
+
+  const shareTwitter = () => {
+    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`, '_blank');
+    onClose();
+  };
+
+  const shareFacebook = () => {
+    // Standard Facebook sharer endpoint, ensuring URL is correctly encoded
+    const fbUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`;
+    window.open(fbUrl, 'fb-share-dialog', 'width=626,height=436');
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 z-[100] bg-black/40 backdrop-blur-md flex items-end justify-center p-6 animate-in fade-in duration-300">
+      <div 
+        className="fixed inset-0" 
+        onClick={onClose}
+      />
+      <div className="bg-white w-full max-w-sm rounded-t-[3.5rem] p-10 pb-16 shadow-2xl relative z-10 animate-in slide-in-from-bottom-full duration-500">
+        <div className="w-12 h-1.5 bg-gray-100 rounded-full mx-auto mb-10"></div>
+        <div className="text-center mb-10">
+          <h3 className="text-2xl font-black text-gray-900 mb-2">Share Specimen</h3>
+          <p className="text-gray-400 text-xs font-bold px-8">Let your friends discover this beautiful {plantName}</p>
+        </div>
+
+        <div className="grid grid-cols-4 gap-4 mb-10">
+          <ShareButton 
+            icon={<MessageCircle size={28} />} 
+            label="WhatsApp" 
+            color="bg-[#25D366] text-white" 
+            onClick={shareWhatsApp} 
+          />
+          <ShareButton 
+            icon={<Twitter size={28} />} 
+            label="Twitter" 
+            color="bg-[#1DA1F2] text-white" 
+            onClick={shareTwitter} 
+          />
+          <ShareButton 
+            icon={<Facebook size={28} />} 
+            label="Facebook" 
+            color="bg-[#4267B2] text-white" 
+            onClick={shareFacebook} 
+          />
+          <ShareButton 
+            icon={<Link size={28} />} 
+            label="Copy" 
+            color="bg-gray-100 text-gray-500" 
+            onClick={copyToClipboard} 
+          />
+        </div>
+
+        <button 
+          onClick={onClose}
+          className="w-full bg-gray-50 text-gray-400 py-5 rounded-[2rem] font-black text-sm uppercase tracking-widest active:scale-95 transition-transform"
+        >
+          Close Drawer
+        </button>
+      </div>
+    </div>
+  );
+};
+
+const ShareButton = ({ icon, label, color, onClick }: { icon: React.ReactNode, label: string, color: string, onClick: () => void }) => (
+  <button onClick={onClick} className="flex flex-col items-center gap-3 active:scale-90 transition-transform">
+    <div className={`${color} w-16 h-16 rounded-[1.8rem] flex items-center justify-center shadow-lg`}>
+      {icon}
+    </div>
+    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{label}</span>
+  </button>
+);
 
 interface VitalStatCardProps {
   label: string;

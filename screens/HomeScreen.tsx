@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo } from 'react';
-import { Search, ChevronRight, Info, ClipboardList, Leaf, MapPin, BookOpen, X, Sparkles, Plus, Crown, Camera, Lightbulb, Droplets, Zap, Shovel } from 'lucide-react';
+import { Search, ChevronRight, Info, ClipboardList, Leaf, MapPin, BookOpen, X, Sparkles, Plus, Crown, Camera, Lightbulb, Droplets, Zap, Shovel, MessageSquare } from 'lucide-react';
 
 interface HomeScreenProps {
   onNavigate?: (tab: string) => void;
@@ -92,12 +92,12 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate, onSearch, onAddToGa
     },
     { 
       id: 'care', 
-      label: 'Care Guide', 
-      desc: 'Expert tips', 
-      icon: <BookOpen size={20} />, 
+      label: 'Ask an Expert', 
+      desc: 'Personalized help', 
+      icon: <MessageSquare size={20} />, 
       color: 'bg-amber-50 text-amber-500', 
-      tab: 'home',
-      isPro: false
+      tab: 'chat',
+      isPro: true
     },
   ];
 
