@@ -1,6 +1,5 @@
-
 import React from 'react';
-import { Home, ClipboardList, MapPin, User, Camera, Leaf, Crown, Sun } from 'lucide-react';
+import { Home, ClipboardList, MapPin, User, Camera, Leaf, Crown, MessageSquare } from 'lucide-react';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -12,7 +11,7 @@ interface LayoutProps {
 }
 
 const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, onCameraClick, userName, isSubscribed }) => {
-  const isMainTab = ['home', 'my-plants', 'diagnose', 'stores', 'profile', 'upsell'].includes(activeTab);
+  const isMainTab = ['home', 'my-plants', 'diagnose', 'stores', 'profile', 'upsell', 'chat'].includes(activeTab);
 
   return (
     <div className="flex flex-col min-h-screen max-w-md mx-auto bg-[#F8FAFB] shadow-xl relative overflow-hidden">
@@ -95,11 +94,10 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, onCa
             onClick={() => setActiveTab('diagnose')} 
           />
           <TabItem 
-            icon={<MapPin size={20} />} 
-            label="Stores" 
-            isPro={!isSubscribed}
-            active={activeTab === 'stores'} 
-            onClick={() => setActiveTab('stores')} 
+            icon={<MessageSquare size={20} />} 
+            label="Chat" 
+            active={activeTab === 'chat'} 
+            onClick={() => setActiveTab('chat')} 
           />
         </nav>
       )}

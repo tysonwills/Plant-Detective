@@ -1,4 +1,3 @@
-
 export interface PlantIdentification {
   scientificName: string;
   commonName: string;
@@ -8,14 +7,24 @@ export interface PlantIdentification {
   description: string;
   isToxic: boolean;
   toxicityWarning?: string;
+  toxicityAdvice?: string; // New field for ingestion/emergency steps
 }
 
 export interface CareGuide {
   watering: string;
+  wateringDaysInterval: number;
   sunlight: string;
   soil: string;
   temperature: string;
+  minTemp?: number;
+  maxTemp?: number;
+  estimatedHeight?: string;
+  humidity: string;
+  fertilizer: string;
+  fertilizerMonthsActive: number[]; // Array of month indices 0-11
+  fertilizerDaysInterval: number;
   pruning: string;
+  cleaningDaysInterval: number;
   seasonalCare: string;
   homeRemedies: string;
   hints: string[];
@@ -42,11 +51,11 @@ export interface IdentificationResponse {
 export interface Reminder {
   id: string;
   plantId: string;
-  type: 'Water' | 'Fertilize' | 'Prune' | 'Mist' | 'Repot';
+  type: 'Water' | 'Fertilize' | 'Prune' | 'Mist' | 'Repot' | 'Clean';
   frequency: 'Daily' | 'Weekly' | 'Bi-weekly' | 'Monthly';
   time: string;
   lastCompleted?: string;
-  lastNotificationDate?: string; // Tracks the last time a notification was sent
+  lastNotificationDate?: string;
 }
 
 export interface DiagnosticResult {
@@ -79,4 +88,10 @@ export interface GardenCenter {
   longitude: number;
   address: string;
   website?: string;
+}
+
+export interface ChatMessage {
+  role: 'user' | 'model';
+  text: string;
+  timestamp: string;
 }

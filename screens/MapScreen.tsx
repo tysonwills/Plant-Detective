@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { MapPin, Navigation, Phone, Globe, Loader2, AlertCircle, Crosshair, Map as MapIcon, Compass } from 'lucide-react';
+import { MapPin, Navigation, Phone, Globe, Loader2, AlertCircle, Crosshair, Map as MapIcon, Compass, Info } from 'lucide-react';
 import { GardenCenter } from '../types';
 import { findNearbyGardenCenters } from '../services/geminiService';
 
@@ -73,7 +73,6 @@ const MapScreen: React.FC = () => {
         <div className="flex justify-between items-start">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 mb-1">Store Finder</h1>
-            <p className="text-gray-500 text-sm">Real-world garden centers near you</p>
           </div>
           <div className={`p-2 rounded-xl border flex items-center gap-2 ${permissionStatus === 'granted' ? 'bg-emerald-50 border-emerald-100 text-[#00D09C]' : 'bg-gray-50 border-gray-100 text-gray-400'}`}>
             <Compass size={16} className={loading ? 'animate-spin' : ''} />
@@ -179,19 +178,15 @@ const MapScreen: React.FC = () => {
                 <div className="flex justify-between items-start mb-1">
                   <h3 className="font-bold text-gray-900 group-hover:text-[#00D09C] transition-colors leading-tight">{center.name}</h3>
                 </div>
-                <p className="text-[11px] text-gray-400 mb-4 leading-relaxed font-medium">{center.address}</p>
-                <div className="flex gap-4">
-                  <a 
-                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(center.name + ' ' + center.address)}`} 
-                    target="_blank" 
-                    rel="noreferrer"
-                    className="flex items-center gap-1.5 text-[9px] font-black text-[#00D09C] uppercase tracking-[0.15em] py-2 px-4 bg-emerald-50 rounded-xl active:scale-95 transition-transform"
-                  >
-                    <Navigation size={12} fill="currentColor" /> Directions
-                  </a>
+                <div className="flex gap-4 mt-2">
                   {center.website && (
-                    <a href={center.website} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-[9px] font-black text-gray-400 uppercase tracking-[0.15em] py-2 px-4 bg-gray-50 rounded-xl active:scale-95 transition-transform">
-                      <Globe size={12} /> Website
+                    <a 
+                      href={center.website} 
+                      target="_blank" 
+                      rel="noreferrer" 
+                      className="flex items-center gap-1.5 text-[10px] font-black text-white uppercase tracking-[0.15em] py-2.5 px-6 bg-[#00D09C] rounded-xl shadow-md shadow-[#00D09C33] active:scale-95 transition-transform"
+                    >
+                      <Info size={14} /> Info
                     </a>
                   )}
                 </div>

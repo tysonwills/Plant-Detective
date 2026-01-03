@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Layout from './components/Layout';
 import HomeScreen from './screens/HomeScreen';
 import MyPlantsScreen from './screens/MyPlantsScreen';
@@ -8,13 +7,16 @@ import MapScreen from './screens/MapScreen';
 import LoginScreen from './screens/LoginScreen';
 import PlantResultScreen from './screens/PlantResultScreen';
 import DiagnosisResultScreen from './screens/DiagnosisResultScreen';
+import ChatScreen from './screens/ChatScreen';
 import ReminderModal from './components/ReminderModal';
+import SplashScreen from './screens/SplashScreen';
 import { identifyPlant, diagnoseHealth, getPlantInfoByName } from './services/geminiService';
 import { getWikiImages, getWikiThumbnail } from './services/wikiService';
 import { IdentificationResponse, WikiImage, UserProfile, DiagnosticResult, Reminder } from './types';
-import { Loader2, Droplets, X, Sprout, CheckCircle, ArrowRight, Crown, Check, ShieldCheck, Zap, Sparkles, Leaf, MapPin, AlertCircle, Bell, BellRing, Clock } from 'lucide-react';
+import { Loader2, Droplets, X, Sprout, CheckCircle, ArrowRight, Crown, Check, ShieldCheck, Zap, Sparkles, Leaf, MapPin, AlertCircle, Bell, BellRing, Clock, PartyPopper } from 'lucide-react';
 
 const App: React.FC = () => {
+  const [showSplash, setShowSplash] = useState(true);
   const [user, setUser] = useState<UserProfile | null>(null);
   const [activeTab, setActiveTab] = useState('home');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -24,13 +26,78 @@ const App: React.FC = () => {
   const [wikiImages, setWikiImages] = useState<WikiImage[]>([]);
   const [myPlants, setMyPlants] = useState<any[]>([]);
   const [reminders, setReminders] = useState<Reminder[]>([]);
-  const [completions, setCompletions] = useState<Record<string, string[]>>({});
+  const [completions, setCompletions] = useState<Record<string, Array<{type: string, timestamp: string}>>>({});
   const [reminderPlant, setReminderPlant] = useState<{id: string, name: string} | null>(null);
-  const [activeNotification, setActiveNotification] = useState<{reminder: Reminder, plantName: string, plantImage?: string} | null>(null);
+  const [activeNotification, setActiveNotification] = useState<{reminder: Reminder, plantName: string, plantImage?: string, isCompleting?: boolean} | null>(null);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Load persistence and start notification scheduler
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowSplash(false);
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const checkAndSelectKey = async () => {
+    if (window.aistudio && typeof window.aistudio.hasSelectedApiKey === 'function') {
+      const hasKey = await window.aistudio.hasSelectedApiKey();
+      if (!hasKey && typeof window.aistudio.openSelectKey === 'function') {
+        await window.aistudio.openSelectKey();
+        return true;
+      }
+    }
+    return true;
+  };
+
+  const triggerNotification = useCallback((reminder: Reminder, plantName: string, plantImage?: string) => {
+    setActiveNotification({ reminder, plantName, plantImage });
+    
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      const NotificationClass = window.Notification;
+      if (NotificationClass.permission === 'granted') {
+        try {
+          new NotificationClass(`FloraID: Time to ${reminder.type}!`, {
+            body: `Your ${plantName} needs attention.`,
+            icon: plantImage || '/favicon.ico'
+          });
+        } catch (e) {
+          console.warn("Notification API failed", e);
+        }
+      }
+    }
+  }, []);
+
+  const checkReminders = useCallback(() => {
+    const savedReminders: Reminder[] = JSON.parse(localStorage.getItem('flora_reminders') || '[]');
+    const savedPlants: any[] = JSON.parse(localStorage.getItem('flora_garden') || '[]');
+    
+    const now = new Date();
+    const today = now.toDateString();
+    const currentHour = now.getHours();
+    const currentMin = now.getMinutes();
+    const currentTotalMinutes = (currentHour * 60) + currentMin;
+
+    let updated = false;
+    const updatedReminders = savedReminders.map(r => {
+      const [rHour, rMin] = r.time.split(':').map(Number);
+      const reminderTotalMinutes = (rHour * 60) + rMin;
+
+      if (currentTotalMinutes >= reminderTotalMinutes && r.lastNotificationDate !== today) {
+        const plant = savedPlants.find(p => p.id === r.plantId);
+        triggerNotification(r, plant?.name || 'Your Plant', plant?.image);
+        updated = true;
+        return { ...r, lastNotificationDate: today };
+      }
+      return r;
+    });
+
+    if (updated) {
+      setReminders(updatedReminders);
+      localStorage.setItem('flora_reminders', JSON.stringify(updatedReminders));
+    }
+  }, [triggerNotification]);
+
   useEffect(() => {
     const savedUser = localStorage.getItem('flora_user');
     if (savedUser) {
@@ -52,65 +119,28 @@ const App: React.FC = () => {
     }
     const savedReminders = localStorage.getItem('flora_reminders');
     if (savedReminders) setReminders(JSON.parse(savedReminders));
-    const savedCompletions = localStorage.getItem('flora_completions');
-    if (savedCompletions) setCompletions(JSON.parse(savedCompletions));
-
-    // Notification Check Interval (runs every 60 seconds)
-    const interval = setInterval(checkReminders, 60000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const checkReminders = () => {
-    const savedReminders = JSON.parse(localStorage.getItem('flora_reminders') || '[]');
-    const savedPlants = JSON.parse(localStorage.getItem('flora_garden') || '[]');
-    const now = new Date();
-    const currentTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-    const today = now.toDateString();
-
-    const dueReminders = savedReminders.filter((r: Reminder) => {
-      const isCorrectTime = r.time === currentTime;
-      const notAlreadyNotifiedToday = r.lastNotificationDate !== today;
-      // Frequency logic simplified for daily/weekly
-      // In a production app, we'd check day of week for Weekly, etc.
-      return isCorrectTime && notAlreadyNotifiedToday;
-    });
-
-    if (dueReminders.length > 0) {
-      const firstDue = dueReminders[0];
-      const plant = savedPlants.find((p: any) => p.id === firstDue.plantId);
-      
-      triggerNotification(firstDue, plant?.name || 'Plant', plant?.image);
-
-      // Mark as notified today to avoid repeat triggers in the same minute/day
-      const updatedReminders = savedReminders.map((r: Reminder) => 
-        r.id === firstDue.id ? { ...r, lastNotificationDate: today } : r
-      );
-      setReminders(updatedReminders);
-      localStorage.setItem('flora_reminders', JSON.stringify(updatedReminders));
-    }
-  };
-
-  const triggerNotification = (reminder: Reminder, plantName: string, plantImage?: string) => {
-    setActiveNotification({ reminder, plantName, plantImage });
     
-    // Native Browser Notification
-    if (Notification.permission === 'granted') {
-      new Notification(`Time to ${reminder.type}!`, {
-        body: `Your ${plantName} needs some love.`,
-        icon: '/favicon.ico'
-      });
+    const savedCompletions = localStorage.getItem('flora_completions');
+    if (savedCompletions) {
+      try {
+        const parsed = JSON.parse(savedCompletions);
+        setCompletions(parsed);
+      } catch (e) {
+        setCompletions({});
+      }
     }
 
-    // Auto-hide in-app toast after 10 seconds
-    setTimeout(() => {
-      setActiveNotification(null);
-    }, 10000);
-  };
+    checkReminders();
+
+    const interval = setInterval(checkReminders, 30000);
+    return () => clearInterval(interval);
+  }, [checkReminders]);
 
   const executeWithKeySafety = async (fn: () => Promise<void>) => {
     try {
       setError(null);
       setIsProcessing(true);
+      await checkAndSelectKey();
       await fn();
     } catch (err: any) {
       console.error("Botanical API Error:", err);
@@ -154,9 +184,8 @@ const App: React.FC = () => {
     setUser(newUser);
     localStorage.setItem('flora_user', JSON.stringify(newUser));
     
-    // Request notification permission
-    if ('Notification' in window) {
-      Notification.requestPermission();
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      window.Notification.requestPermission();
     }
   };
 
@@ -173,6 +202,7 @@ const App: React.FC = () => {
       status: 'Healthy',
       statusColor: 'text-emerald-500 bg-emerald-50',
       lastWatered: 'Just added',
+      lastCare: {}, 
       fullData: plant.fullData, 
       wikiImages: plant.wikiImages 
     };
@@ -189,6 +219,11 @@ const App: React.FC = () => {
     const updatedReminders = reminders.filter(r => r.plantId !== plantId);
     setReminders(updatedReminders);
     localStorage.setItem('flora_reminders', JSON.stringify(updatedReminders));
+    
+    const updatedComps = { ...completions };
+    delete updatedComps[plantId];
+    setCompletions(updatedComps);
+    localStorage.setItem('flora_completions', JSON.stringify(updatedComps));
   };
 
   const handleSaveReminder = (reminderData: Omit<Reminder, 'id'>) => {
@@ -197,17 +232,64 @@ const App: React.FC = () => {
     setReminders(updated);
     localStorage.setItem('flora_reminders', JSON.stringify(updated));
     setReminderPlant(null);
+    setTimeout(checkReminders, 1000);
   };
 
   const handleCompleteTask = (plantId: string, taskType: string) => {
-    const current = completions[plantId] || [];
-    const updated = current.includes(taskType) ? current.filter(t => t !== taskType) : [...current, taskType];
-    const newCompletions = { ...completions, [plantId]: updated };
+    if (activeNotification && activeNotification.reminder.plantId === plantId) {
+      setActiveNotification(prev => prev ? { ...prev, isCompleting: true } : null);
+    }
+
+    const now = new Date();
+    const timestamp = now.toISOString();
+    const today = now.toDateString();
+    
+    const newEntry = { type: taskType, timestamp };
+    const currentLogs = completions[plantId] || [];
+    
+    const newCompletions = { ...completions, [plantId]: [newEntry, ...currentLogs] };
     setCompletions(newCompletions);
     localStorage.setItem('flora_completions', JSON.stringify(newCompletions));
-    
+
+    const updatedPlants = myPlants.map(p => {
+      if (p.id === plantId) {
+        let status = p.status;
+        
+        // Ensure repeat tasks overwrite last data by updating the lastCare object
+        const lastCare = { ...(p.lastCare || {}), [taskType]: timestamp };
+        
+        if (taskType.includes('Water')) {
+          status = 'Healthy';
+        } else if (taskType.includes('Prun')) {
+          status = 'Freshly Groomed';
+        } else if (taskType.includes('Clean')) {
+          status = 'Shiny & Healthy';
+        }
+        
+        return { ...p, status, lastCare };
+      }
+      return p;
+    });
+    setMyPlants(updatedPlants);
+    localStorage.setItem('flora_garden', JSON.stringify(updatedPlants));
+
+    const updatedReminders = reminders.map(r => {
+      const typeMatch = (r.type === 'Water' && taskType.includes('Water')) ||
+                        (r.type === 'Fertilize' && taskType.includes('Fertil')) ||
+                        (r.type === 'Prune' && taskType.includes('Prun')) ||
+                        (r.type === 'Mist' && taskType.includes('Mist')) ||
+                        (r.type === 'Clean' && taskType.includes('Clean'));
+
+      if (r.plantId === plantId && typeMatch) {
+        return { ...r, lastNotificationDate: today };
+      }
+      return r;
+    });
+    setReminders(updatedReminders);
+    localStorage.setItem('flora_reminders', JSON.stringify(updatedReminders));
+
     if (activeNotification && activeNotification.reminder.plantId === plantId) {
-      setActiveNotification(null);
+      setTimeout(() => setActiveNotification(null), 1500);
     }
   };
 
@@ -217,293 +299,170 @@ const App: React.FC = () => {
       const images = await getWikiImages(result.identification.scientificName, result.identification.genus);
       const similar = await Promise.all(result.similarPlants.map(async (p) => {
         const thumb = await getWikiThumbnail(p.scientificName || p.name);
-        return { ...p, imageUrl: thumb || `https://picsum.photos/seed/${p.name}/300/200` };
+        return { ...p, imageUrl: thumb || `https://picsum.photos/seed/${p.name}/400/600` };
       }));
-      setIdResult({ ...result, similarPlants: similar });
       setWikiImages(images);
-      setActiveTab('results');
-    });
-  };
-
-  const handleGardenPlantClick = (plant: any) => {
-    if (plant.fullData) {
-      setIdResult(plant.fullData);
-      setWikiImages(plant.wikiImages || []);
-      setActiveTab('results');
-      return;
-    }
-
-    executeWithKeySafety(async () => {
-      const result = await getPlantInfoByName(plant.species || plant.name);
-      const images = await getWikiImages(result.identification.scientificName, result.identification.genus);
-      const similar = await Promise.all(result.similarPlants.map(async (p) => {
-        const thumb = await getWikiThumbnail(p.scientificName || p.name);
-        return { ...p, imageUrl: thumb || `https://picsum.photos/seed/${p.name}/300/200` };
-      }));
-      const finalImages = images;
-      if (plant.image && !images.some(img => img.imageUrl === plant.image)) {
-        finalImages.unshift({ imageUrl: plant.image, sourcePageUrl: '' });
-      }
       setIdResult({ ...result, similarPlants: similar });
-      setWikiImages(finalImages);
-      setActiveTab('results');
+      setActiveTab('id-result');
     });
   };
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
     const reader = new FileReader();
-    reader.onloadend = () => {
+    reader.onload = async () => {
       const base64 = (reader.result as string).split(',')[1];
-      executeWithKeySafety(async () => {
-        if (activeTab === 'diagnose' || (activeTab === 'upsell' && diagResult === null)) {
-          const rawDiag = await diagnoseHealth(base64);
-          const entry = { ...rawDiag, id: Date.now().toString(), timestamp: new Date().toISOString(), imageUrl: reader.result as string };
+      if (activeTab === 'diagnose') {
+        executeWithKeySafety(async () => {
+          const result = await diagnoseHealth(base64);
           const history = JSON.parse(localStorage.getItem('flora_diag_history') || '[]');
-          localStorage.setItem('flora_diag_history', JSON.stringify([entry, ...history]));
-          setDiagResult(entry);
-          setActiveTab('diag-results');
-        } else {
+          const newDiag = { ...result, id: Date.now().toString(), timestamp: new Date().toISOString(), imageUrl: reader.result as string };
+          localStorage.setItem('flora_diag_history', JSON.stringify([newDiag, ...history]));
+          setDiagResult(newDiag);
+          setActiveTab('diag-result');
+        });
+      } else {
+        executeWithKeySafety(async () => {
           const result = await identifyPlant(base64);
           const images = await getWikiImages(result.identification.scientificName, result.identification.genus);
           const similar = await Promise.all(result.similarPlants.map(async (p) => {
             const thumb = await getWikiThumbnail(p.scientificName || p.name);
-            return { ...p, imageUrl: thumb || `https://picsum.photos/seed/${p.name}/300/200` };
+            return { ...p, imageUrl: thumb || `https://picsum.photos/seed/${p.name}/400/600` };
           }));
-          setIdResult({ ...result, similarPlants: similar });
           setWikiImages(images);
-          setActiveTab('results'); 
-        }
-      });
+          setIdResult({ ...result, similarPlants: similar });
+          setActiveTab('id-result');
+        });
+      }
     };
     reader.readAsDataURL(file);
   };
 
-  if (!user) return <LoginScreen onLogin={handleLogin} />;
-
   const renderContent = () => {
-    if (activeTab === 'results' && idResult) {
-      const current = myPlants.find(p => p.species === idResult.identification.scientificName);
-      return (
-        <PlantResultScreen 
-          data={idResult} images={wikiImages} hideAddButton={!!current}
-          reminders={current ? reminders.filter(r => r.plantId === current.id) : []}
-          completedTasks={current ? (completions[current.id] || []) : []}
-          onAddReminder={() => current && setReminderPlant({ id: current.id, name: current.name })}
-          onCompleteTask={(type) => current && handleCompleteTask(current.id, type)}
-          onSearchSimilar={handlePlantSearch}
-          onFindStores={() => handleNavigate('stores')}
-          onAddToGarden={(name, species, img) => addPlantToGarden({ name, species, image: img, fullData: idResult, wikiImages })}
-          onBack={() => handleNavigate(!!current ? 'my-plants' : 'home')} 
-        />
-      );
-    }
-
-    if (activeTab === 'diag-results' && diagResult) {
-      return <DiagnosisResultScreen result={diagResult} onBack={() => handleNavigate('diagnose')} />;
-    }
-
-    if (activeTab === 'upsell') {
-      return (
-        <div className="min-h-full bg-white animate-in slide-in-from-bottom-20 duration-500 pb-10">
-          <div className="relative h-[40vh] bg-[#FFF9E6] overflow-hidden">
-            <div className="absolute inset-0 flex items-center justify-center opacity-10">
-               <Crown size={300} fill="currentColor" className="text-[#D4AF37]" />
-            </div>
-            <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-8">
-               <div className="bg-white p-6 rounded-[2.5rem] shadow-xl mb-6 border-4 border-[#D4AF37]">
-                 <Crown size={48} className="text-[#D4AF37]" fill="currentColor" />
-               </div>
-               <h1 className="text-3xl font-black text-gray-900 tracking-tight mb-2">FloraID Pro</h1>
-               <p className="text-[#D4AF37] font-bold uppercase tracking-[0.2em] text-xs">The Ultimate Garden Toolkit</p>
-            </div>
-          </div>
-          
-          <div className="px-8 -mt-8 relative z-10 space-y-4">
-            <div className="bg-white rounded-[2.5rem] p-8 shadow-xl border border-gray-100">
-               <h3 className="font-bold text-gray-900 mb-6 flex items-center gap-2 text-lg">
-                 <Sparkles size={20} className="text-[#D4AF37]" />
-                 Premium Benefits
-               </h3>
-               <div className="space-y-6">
-                 <UpsellFeature icon={<Leaf />} title="Virtual Garden" desc="Track unlimited plants and care history." />
-                 <UpsellFeature icon={<ShieldCheck />} title="AI Diagnostics" desc="Identify 1000+ pests and diseases." />
-                 <UpsellFeature icon={<Zap />} title="Unlimited ID" desc="Snap & identify any species instantly." />
-                 <UpsellFeature icon={<MapPin />} title="Garden Maps" desc="Exclusive access to store finders." />
-               </div>
-            </div>
-
-            <button 
-              onClick={toggleSubscription}
-              className="w-full bg-[#00D09C] py-6 rounded-[2.5rem] text-white font-bold text-lg shadow-xl shadow-[#00D09C44] active:scale-95 transition-transform"
-            >
-              Start 7-Day Free Trial
-            </button>
-            <button onClick={() => setActiveTab('home')} className="w-full py-4 text-gray-400 font-bold text-xs uppercase tracking-widest">
-              Maybe Later
-            </button>
-          </div>
+    if (!user) return <LoginScreen onLogin={handleLogin} />;
+    if (activeTab === 'upsell') return (
+      <div className="flex flex-col items-center justify-center h-full px-8 text-center animate-in zoom-in-95 duration-500">
+        <div className="bg-amber-50 p-6 rounded-[3rem] mb-8 text-[#D4AF37] shadow-xl shadow-amber-100">
+          <Crown size={64} fill="currentColor" />
         </div>
-      );
-    }
-
-    switch(activeTab) {
-      case 'home':
-        return <HomeScreen onNavigate={handleNavigate} onSearch={handlePlantSearch} onScanClick={handleCameraClick} onAddToGarden={(name, species) => addPlantToGarden({ name, species })} isSubscribed={user.isSubscribed} />;
-      case 'my-plants':
-        return <MyPlantsScreen plants={myPlants} reminders={reminders} onAddClick={handleCameraClick} onManageReminders={(id, name) => setReminderPlant({ id, name })} onPlantClick={handleGardenPlantClick} onRemovePlant={handleRemovePlant} />;
-      case 'diagnose':
-        return <DiagnosticsScreen onStartDiagnosis={handleCameraClick} />;
-      case 'stores':
-        return <MapScreen />;
-      case 'profile':
-        return (
-          <div className="px-6 pt-4 animate-in fade-in duration-500">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Account Settings</h2>
-            <div className="bg-white p-6 rounded-[2.5rem] shadow-sm border border-gray-100 flex items-center gap-4 mb-8">
-              <div className="w-16 h-16 bg-[#EFFFFB] text-[#00D09C] rounded-[1.5rem] flex items-center justify-center font-bold text-xl uppercase shadow-inner">
-                {user.name ? user.name[0] : 'U'}
-              </div>
-              <div>
-                <h3 className="font-bold text-gray-900 text-lg">{user.name}</h3>
-                <p className="text-xs text-gray-400 font-medium">{user.email}</p>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <ProfileItem 
-                label="My Subscriptions" 
-                value={user.isSubscribed ? "Premium Pro" : "Free Plan"} 
-                sub={user.isSubscribed ? "Manage Billing" : "Upgrade to Pro"} 
-                onClick={user.isSubscribed ? undefined : () => setActiveTab('upsell')}
-              />
-              <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100 flex justify-between items-center group">
-                <div>
-                  <h4 className="font-bold text-gray-900 text-sm">Notifications</h4>
-                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mt-1">Smart Alerts Enabled</p>
-                </div>
-                <div className="w-12 h-6 bg-[#00D09C] rounded-full relative p-1 flex items-center">
-                  <div className="w-4 h-4 bg-white rounded-full ml-auto"></div>
-                </div>
-              </div>
-              <ProfileItem label="Nearby Stores" onClick={() => handleNavigate('stores')} />
-              <button onClick={() => { setUser(null); localStorage.removeItem('flora_user'); }} className="w-full text-center py-6 text-rose-500 font-bold uppercase tracking-widest text-[10px] mt-4 hover:bg-rose-50 rounded-[1.5rem] transition-colors">Sign Out</button>
-            </div>
-          </div>
-        );
-      default:
-        return <HomeScreen onNavigate={handleNavigate} onSearch={handlePlantSearch} onScanClick={handleCameraClick} onAddToGarden={(name, species) => addPlantToGarden({ name, species })} isSubscribed={user.isSubscribed} />;
-    }
+        <h2 className="text-3xl font-black text-gray-900 mb-4 tracking-tight leading-none">Unlock FloraID Pro</h2>
+        <p className="text-gray-500 font-medium mb-10 leading-relaxed">Get unlimited AI diagnostics, store finder, and personalized care schedules.</p>
+        <div className="w-full space-y-4 mb-10">
+           <div className="flex items-center gap-4 bg-white p-5 rounded-3xl border border-gray-100 shadow-sm text-left">
+              <CheckCircle className="text-[#00D09C] flex-shrink-0" size={24} />
+              <span className="text-sm font-bold text-gray-700">Unlimited Botanical ID & Diagnosis</span>
+           </div>
+           <div className="flex items-center gap-4 bg-white p-5 rounded-3xl border border-gray-100 shadow-sm text-left">
+              <CheckCircle className="text-[#00D09C] flex-shrink-0" size={24} />
+              <span className="text-sm font-bold text-gray-700">Global Garden Center Database</span>
+           </div>
+           <div className="flex items-center gap-4 bg-white p-5 rounded-3xl border border-gray-100 shadow-sm text-left">
+              <CheckCircle className="text-[#00D09C] flex-shrink-0" size={24} />
+              <span className="text-sm font-bold text-gray-700">Precision Humidity & Light Tools</span>
+           </div>
+        </div>
+        <button 
+          onClick={toggleSubscription}
+          className="w-full bg-[#00D09C] py-6 rounded-[2.5rem] text-white font-black text-lg shadow-2xl shadow-[#00D09C44] active:scale-95 transition-transform"
+        >
+          Start 7-Day Free Trial
+        </button>
+        <button onClick={() => setActiveTab('home')} className="mt-6 text-gray-400 font-black text-xs uppercase tracking-widest">Maybe Later</button>
+      </div>
+    );
+    if (activeTab === 'home') return <HomeScreen isSubscribed={user.isSubscribed} onNavigate={handleNavigate} onSearch={handlePlantSearch} onScanClick={handleCameraClick} onAddToGarden={(n, s) => addPlantToGarden({ name: n, species: s })} />;
+    if (activeTab === 'my-plants') return <MyPlantsScreen plants={myPlants} reminders={reminders} completions={completions} onAddClick={handleCameraClick} onManageReminders={(id, name) => setReminderPlant({ id, name })} onPlantClick={(p) => { setIdResult(p.fullData || null); if (p.fullData) { setWikiImages(p.wikiImages || []); setActiveTab('id-result'); } }} onRemovePlant={handleRemovePlant} onCompleteTask={handleCompleteTask} />;
+    if (activeTab === 'diagnose') return <DiagnosticsScreen onStartDiagnosis={handleCameraClick} />;
+    if (activeTab === 'stores') return <MapScreen />;
+    if (activeTab === 'chat') return <ChatScreen />;
+    if (activeTab === 'id-result' && idResult) return <PlantResultScreen data={idResult} images={wikiImages} onAddToGarden={(n, s, i) => addPlantToGarden({ name: n, species: s, image: i, fullData: idResult, wikiImages })} onBack={() => setActiveTab('home')} onFindStores={() => setActiveTab('stores')} />;
+    if (activeTab === 'diag-result' && diagResult) return <DiagnosisResultScreen result={diagResult} onBack={() => setActiveTab('diagnose')} />;
+    return <HomeScreen onNavigate={handleNavigate} />;
   };
+
+  if (showSplash) return <SplashScreen />;
 
   return (
     <Layout 
       activeTab={activeTab} 
       setActiveTab={handleNavigate} 
-      onCameraClick={handleCameraClick} 
-      userName={user.name} 
-      isSubscribed={user.isSubscribed}
+      onCameraClick={handleCameraClick}
+      userName={user?.name}
+      isSubscribed={user?.isSubscribed}
     >
-      {renderContent()}
-
-      {/* Global Push Notification Toast */}
-      {activeNotification && (
-        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[500] w-[90%] max-w-sm animate-in slide-in-from-top-10 duration-500">
-           <div className="bg-white/95 backdrop-blur-xl border border-white p-5 rounded-[2.5rem] shadow-2xl flex items-center gap-4">
-             <div className="relative w-14 h-14 flex-shrink-0">
-               {activeNotification.plantImage ? (
-                 <img src={activeNotification.plantImage} className="w-full h-full rounded-2xl object-cover" />
-               ) : (
-                 <div className="w-full h-full bg-[#EFFFFB] text-[#00D09C] rounded-2xl flex items-center justify-center">
-                    <Sprout size={24} />
-                 </div>
-               )}
-               <div className="absolute -bottom-1 -right-1 bg-[#00D09C] text-white p-1 rounded-full border-2 border-white">
-                  {activeNotification.reminder.type === 'Water' ? <Droplets size={12} /> : <Zap size={12} />}
-               </div>
-             </div>
-             <div className="flex-1">
-               <h4 className="font-black text-gray-900 text-sm">{activeNotification.reminder.type} Reminder</h4>
-               <p className="text-gray-500 text-[10px] font-bold">Your {activeNotification.plantName} needs attention.</p>
-               <div className="flex gap-2 mt-2">
-                 <button 
-                  onClick={() => handleCompleteTask(activeNotification.reminder.plantId, activeNotification.reminder.type === 'Water' ? 'Watering' : activeNotification.reminder.type)}
-                  className="bg-[#00D09C] text-white px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider shadow-md shadow-[#00D09C33]"
-                 >
-                   Done
-                 </button>
-                 <button 
-                  onClick={() => setActiveNotification(null)}
-                  className="bg-gray-100 text-gray-400 px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider"
-                 >
-                   Later
-                 </button>
-               </div>
-             </div>
+      {isProcessing && (
+        <div className="fixed inset-0 z-[100] bg-white/80 backdrop-blur-md flex flex-col items-center justify-center p-12 text-center animate-in fade-in duration-300">
+           <div className="relative mb-8">
+              <div className="w-24 h-24 border-8 border-gray-100 rounded-full"></div>
+              <div className="absolute inset-0 w-24 h-24 border-t-8 border-[#00D09C] rounded-full animate-spin"></div>
+              <Sprout className="absolute inset-0 m-auto text-[#00D09C] animate-pulse" size={32} />
            </div>
+           <h3 className="text-2xl font-black text-gray-900 mb-2">Analyzing Specimen</h3>
+           <p className="text-gray-400 font-bold italic text-sm">Cross-referencing global botanical databases...</p>
         </div>
       )}
 
       {error && (
-        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[400] w-[90%] max-w-sm animate-in slide-in-from-top-10 fade-in duration-300">
-          <div className="bg-white border-2 border-rose-100 p-6 rounded-[2.5rem] shadow-2xl flex items-start gap-4">
-            <div className="bg-rose-50 p-3 rounded-2xl text-rose-500 flex-shrink-0">
-              <AlertCircle size={24} />
-            </div>
-            <div className="flex-1">
-              <h4 className="font-bold text-rose-900 text-sm mb-1">Notice</h4>
-              <p className="text-rose-700 text-[11px] leading-relaxed font-semibold">{error}</p>
-              <button 
-                onClick={() => setError(null)}
-                className="mt-3 text-rose-900 font-bold text-[10px] uppercase tracking-widest bg-rose-50 px-4 py-2 rounded-xl"
-              >
-                Dismiss
-              </button>
-            </div>
-          </div>
+        <div className="fixed top-20 left-6 right-6 z-[100] bg-rose-50 border-2 border-rose-100 p-6 rounded-[2rem] shadow-2xl animate-in slide-in-from-top-10 duration-500">
+           <div className="flex items-start gap-4">
+              <div className="bg-rose-100 text-rose-500 p-2.5 rounded-xl"><AlertCircle size={20} /></div>
+              <div className="flex-1">
+                 <h4 className="text-rose-900 font-black text-sm uppercase tracking-wider mb-1">Processing Error</h4>
+                 <p className="text-rose-700 text-xs font-bold leading-relaxed">{error}</p>
+                 <button onClick={() => setError(null)} className="mt-4 bg-rose-500 text-white px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-rose-200">Dismiss</button>
+              </div>
+           </div>
         </div>
       )}
 
-      <input type="file" accept="image/*" capture="environment" ref={fileInputRef} onChange={handleFileChange} className="hidden" />
-      
-      {isProcessing && (
-        <div className="fixed inset-0 z-[200] bg-black/40 backdrop-blur-md flex flex-col items-center justify-center text-white p-6">
-          <div className="bg-white p-10 rounded-[3rem] shadow-2xl flex flex-col items-center text-center max-w-xs">
-            <div className="relative mb-6">
-              <div className="absolute inset-0 bg-[#00D09C] rounded-full animate-ping opacity-20 scale-150"></div>
-              <div className="bg-[#EFFFFB] p-4 rounded-full relative"><Loader2 size={40} className="text-[#00D09C] animate-spin" /></div>
-            </div>
-            <h2 className="text-gray-900 font-bold text-xl mb-2">Botanical Deep Dive...</h2>
-            <p className="text-gray-400 text-sm leading-relaxed">Harvesting latest plant secrets just for you.</p>
-          </div>
+      {activeNotification && (
+        <div className={`fixed top-12 left-6 right-6 z-[110] bg-white rounded-[2.5rem] p-5 shadow-2xl border-4 transition-all duration-500 transform ${activeNotification.isCompleting ? 'scale-95 opacity-0' : 'scale-100 opacity-100'} border-[#00D09C]`}>
+           <div className="flex items-center gap-5">
+              <div className="relative w-16 h-16 flex-shrink-0">
+                 <img src={activeNotification.plantImage} className="w-full h-full object-cover rounded-2xl" alt="" />
+                 <div className="absolute -bottom-2 -right-2 bg-[#00D09C] text-white p-1.5 rounded-xl border-4 border-white"><Droplets size={14} fill="currentColor" /></div>
+              </div>
+              <div className="flex-1 overflow-hidden">
+                 <h4 className="text-[10px] font-black text-[#00D09C] uppercase tracking-widest mb-1">Time to {activeNotification.reminder.type}</h4>
+                 <p className="text-gray-900 font-black text-lg truncate leading-none mb-1">{activeNotification.plantName}</p>
+                 <p className="text-gray-400 font-bold text-[9px] uppercase tracking-tighter">Scheduled for {activeNotification.reminder.time}</p>
+              </div>
+           </div>
+           <div className="flex gap-3 mt-5">
+              <button 
+                onClick={() => handleCompleteTask(activeNotification.reminder.plantId, activeNotification.reminder.type)}
+                className="flex-1 bg-[#00D09C] text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg shadow-emerald-100 flex items-center justify-center gap-2"
+              >
+                <Check size={16} strokeWidth={3} /> Mark Done
+              </button>
+              <button onClick={() => setActiveNotification(null)} className="px-5 bg-gray-50 text-gray-400 rounded-2xl font-black text-xs uppercase tracking-widest">Later</button>
+           </div>
         </div>
       )}
-      {reminderPlant && <ReminderModal plantId={reminderPlant.id} plantName={reminderPlant.name} onClose={() => setReminderPlant(null)} onSave={handleSaveReminder} />}
+
+      {renderContent()}
+
+      <input 
+        type="file" 
+        ref={fileInputRef} 
+        onChange={handleFileSelect} 
+        accept="image/*" 
+        capture="environment"
+        className="hidden" 
+      />
+
+      {reminderPlant && (
+        <ReminderModal 
+          plantId={reminderPlant.id} 
+          plantName={reminderPlant.name} 
+          onClose={() => setReminderPlant(null)} 
+          onSave={handleSaveReminder} 
+        />
+      )}
     </Layout>
   );
 };
-
-const UpsellFeature = ({ icon, title, desc }: any) => (
-  <div className="flex gap-4">
-    <div className="bg-[#FFF9E6] p-2.5 h-11 w-11 rounded-2xl flex items-center justify-center text-[#D4AF37] flex-shrink-0">
-      {React.cloneElement(icon, { size: 20 })}
-    </div>
-    <div>
-      <h4 className="font-bold text-gray-900 text-sm">{title}</h4>
-      <p className="text-[10px] text-gray-400 font-medium">{desc}</p>
-    </div>
-  </div>
-);
-
-const ProfileItem = ({ label, value, sub, onClick }: any) => (
-  <div onClick={onClick} className="bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100 flex justify-between items-center group cursor-pointer active:bg-gray-50 transition-colors">
-    <div>
-      <h4 className="font-bold text-gray-900 text-sm group-hover:text-[#00D09C] transition-colors">{label}</h4>
-      {sub && <p className="text-[10px] text-[#00D09C] font-bold uppercase tracking-wider mt-1">{sub}</p>}
-    </div>
-    {value && <span className={`text-xs font-bold ${value === "Premium Pro" ? 'text-[#D4AF37]' : 'text-gray-400'}`}>{value}</span>}
-  </div>
-);
 
 export default App;

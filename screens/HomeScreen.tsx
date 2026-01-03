@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo } from 'react';
-import { Search, ChevronRight, Info, ClipboardList, Leaf, MapPin, BookOpen, X, Sparkles, Plus, Crown, Camera } from 'lucide-react';
+import { Search, ChevronRight, Info, ClipboardList, Leaf, MapPin, BookOpen, X, Sparkles, Plus, Crown, Camera, Lightbulb, Droplets, Zap, Shovel } from 'lucide-react';
 
 interface HomeScreenProps {
   onNavigate?: (tab: string) => void;
@@ -33,6 +33,33 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate, onSearch, onAddToGa
     "The world's largest flower, the Rafflesia arnoldii, can grow to 3 feet across.",
     "Sunflowers aren't just one flower; they're made of thousands of tiny flowers.",
     "A tree can absorb as much as 48 pounds of carbon dioxide per year."
+  ];
+
+  const tricks = [
+    {
+      title: "The Cinnamon Trick",
+      desc: "Dust a little cinnamon on the soil of seedlings to prevent 'damping off' disease and fungal growth.",
+      icon: <Sparkles size={18} />,
+      color: "bg-amber-50 text-amber-600"
+    },
+    {
+      title: "Banana Peel Boost",
+      desc: "Bury dried banana peels in the soil for a natural potassium boost that flowers love.",
+      icon: <Zap size={18} />,
+      color: "bg-yellow-50 text-yellow-600"
+    },
+    {
+      title: "Self-Watering Hack",
+      desc: "Fill a wine bottle with water and flip it quickly into the soil for a slow-release watering system.",
+      icon: <Droplets size={18} />,
+      color: "bg-blue-50 text-blue-600"
+    },
+    {
+      title: "Pencil Moisture Test",
+      desc: "Stick a wooden pencil 2 inches into the soil. If it comes out clean, it's time to water.",
+      icon: <Shovel size={18} />,
+      color: "bg-emerald-50 text-emerald-600"
+    }
   ];
 
   const tools = [
@@ -239,22 +266,44 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate, onSearch, onAddToGa
       )}
 
       {!searchQuery && (
-        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-          <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2 px-1">
-            <Info size={18} className="text-[#00D09C]" />
-            Did You Know?
-          </h2>
-          <div className="space-y-4">
-            {facts.map((fact, i) => (
-              <div key={i} className="bg-white p-5 rounded-[2.5rem] border border-gray-100 flex gap-4 shadow-sm group">
-                <div className="bg-emerald-50 text-[#00D09C] p-2.5 h-10 w-10 rounded-2xl flex items-center justify-center flex-shrink-0 group-hover:bg-[#00D09C] group-hover:text-white transition-colors">
-                  <Sparkles size={18} />
+        <>
+          <div className="mb-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2 px-1">
+              <Lightbulb size={18} className="text-amber-500" />
+              Gardening Tricks & Tips
+            </h2>
+            <div className="flex flex-col gap-4">
+              {tricks.map((trick, i) => (
+                <div key={i} className="bg-white p-6 rounded-[2.5rem] border border-gray-100 flex gap-5 shadow-sm active:scale-[0.99] transition-all group">
+                  <div className={`${trick.color} p-3.5 h-12 w-12 rounded-[1.25rem] flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform`}>
+                    {trick.icon}
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-gray-900 text-[15px] mb-1 leading-tight">{trick.title}</h3>
+                    <p className="text-gray-500 text-xs font-medium leading-relaxed">{trick.desc}</p>
+                  </div>
                 </div>
-                <p className="text-gray-600 text-sm font-medium leading-relaxed">{fact}</p>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
+
+          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2 px-1">
+              <Info size={18} className="text-[#00D09C]" />
+              Did You Know?
+            </h2>
+            <div className="space-y-4">
+              {facts.map((fact, i) => (
+                <div key={i} className="bg-white p-5 rounded-[2.5rem] border border-gray-100 flex gap-4 shadow-sm group">
+                  <div className="bg-emerald-50 text-[#00D09C] p-2.5 h-10 w-10 rounded-2xl flex items-center justify-center flex-shrink-0 group-hover:bg-[#00D09C] group-hover:text-white transition-colors">
+                    <Sparkles size={18} />
+                  </div>
+                  <p className="text-gray-600 text-sm font-medium leading-relaxed">{fact}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </>
       )}
     </div>
   );
