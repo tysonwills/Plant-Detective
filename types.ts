@@ -90,6 +90,11 @@ export interface GardenCenter {
   longitude: number;
   address: string;
   website?: string;
+  rating?: number;
+  distance?: string;
+  isOpen?: boolean;
+  tags?: string[];
+  phone?: string;
 }
 
 export interface ChatMessage {

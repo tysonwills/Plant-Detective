@@ -12,7 +12,7 @@ import FavoritesScreen from './screens/FavoritesScreen';
 import ProfileScreen from './screens/ProfileScreen';
 import ChatScreen from './screens/ChatScreen';
 import TermsScreen from './screens/TermsScreen';
-import ReminderModal from './components/ReminderModal';
+import UpsellScreen from './screens/UpsellScreen';
 import SplashScreen from './screens/SplashScreen';
 import { identifyPlant, diagnoseHealth, getPlantInfoByName } from './services/geminiService';
 import { getWikiImages, getWikiThumbnail } from './services/wikiService';
@@ -189,11 +189,10 @@ const App: React.FC = () => {
       {activeTab === 'diag-result' && diagResult && <DiagnosisResultScreen result={diagResult} onBack={() => setActiveTab('diagnose')} />}
       
       {activeTab === 'upsell' && (
-        <div className="flex flex-col items-center justify-center h-full px-8 text-center bg-white">
-           <div className="bg-amber-50 p-6 rounded-[3rem] mb-6 text-[#D4AF37]"><Crown size={64} fill="currentColor" /></div>
-           <h2 className="text-3xl font-black text-gray-900 mb-2">FloraID Pro</h2>
-           <button onClick={() => { setUser({...user, isSubscribed: true}); setActiveTab('home'); }} className="w-full bg-[#00D09C] py-5 rounded-[2rem] text-white font-black text-lg">Upgrade Now</button>
-        </div>
+        <UpsellScreen 
+          onSubscribe={() => { setUser({...user, isSubscribed: true}); setActiveTab('home'); }} 
+          onBack={() => setActiveTab('home')} 
+        />
       )}
 
       {isProcessing && (
