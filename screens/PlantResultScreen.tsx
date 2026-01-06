@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { ChevronLeft, Droplets, Sun, Sprout, ShieldAlert, Heart, Share2, Info, Lightbulb, CheckCircle, Leaf, Plus, Check, ChevronRight, Thermometer, AlertCircle, Sparkles, MapPin, ShoppingBag, Camera, X, RefreshCw, Bell, Clock, Shovel, Scissors, Calendar, Wind, FlaskConical, PartyPopper, Beaker, Mountain, Zap, Activity, Ruler, MoveUp, BarChart3, Waves, Sparkle, Wind as MistIcon, CheckCircle2, Scan, AlertTriangle, Stethoscope, HelpCircle, Copy, ArrowRight, MessageCircle, Twitter, Facebook, Link, Microscope, Search } from 'lucide-react';
 import { IdentificationResponse, WikiImage, Reminder } from '../types';
@@ -112,7 +111,7 @@ const PlantResultScreen: React.FC<PlantResultScreenProps> = ({
 
   if (!hasBotanicalData && (loading || !data)) {
     return (
-      <div className="animate-in fade-in duration-500 pb-32 bg-[#F8FAFB] relative min-h-screen">
+      <div className="animate-in fade-in duration-500 pb-32 bg-[#F2F4F7] relative min-h-screen">
         <div className="absolute top-12 left-0 right-0 z-20 px-6 flex justify-between items-center">
           <button onClick={onBack} className="bg-white/90 backdrop-blur-md p-2.5 rounded-2xl shadow-sm text-gray-800"><ChevronLeft size={24} /></button>
         </div>
@@ -161,7 +160,7 @@ const PlantResultScreen: React.FC<PlantResultScreenProps> = ({
   const displayRelatives = similarPlants.slice(0, 4);
 
   return (
-    <div className="animate-in fade-in slide-in-from-right-4 duration-500 pb-32 bg-[#F8FAFB] relative">
+    <div className="animate-in fade-in slide-in-from-right-4 duration-500 pb-32 bg-[#F2F4F7] relative">
       {toast && (
         <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[60] animate-in slide-in-from-top-4 fade-in duration-300">
           <div className={`px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-3 backdrop-blur-md border border-white/20 ${
@@ -244,7 +243,7 @@ const PlantResultScreen: React.FC<PlantResultScreenProps> = ({
             <Sprout size={64} className="text-[#00D09C] animate-pulse opacity-40" />
           </div>
         )}
-        <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-[#F8FAFB] via-[#F8FAFB]/40 to-transparent"></div>
+        <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-[#F2F4F7] via-[#F2F4F7]/40 to-transparent"></div>
       </div>
 
       <div className="px-8 -mt-12 relative z-10">

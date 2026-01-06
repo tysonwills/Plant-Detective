@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, User, Bot, Loader2, Sparkles, MessageCircle, ChevronLeft, MoreHorizontal, Camera, Image as ImageIcon, Sprout, X } from 'lucide-react';
 import { ChatMessage } from '../types';
@@ -107,7 +106,7 @@ const ChatScreen: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col h-full bg-[#F8FAFB] relative overflow-hidden">
+    <div className="flex flex-col h-full bg-[#F2F4F7] relative overflow-hidden">
       {/* Hidden File Input */}
       <input 
         type="file" 

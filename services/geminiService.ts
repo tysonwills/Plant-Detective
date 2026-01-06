@@ -66,11 +66,11 @@ const identificationSchema = {
 export const identifyPlant = async (base64Image: string): Promise<IdentificationResponse> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const response = await ai.models.generateContent({
-    model: "gemini-3-flash-preview",
+    model: "gemini-3-pro-preview",
     contents: {
       parts: [
         { inlineData: { mimeType: "image/jpeg", data: base64Image } },
-        { text: "Identify this plant. For the main result and for each 'similarPlant' entry, provide full botanical data including identification details, complete care parameters (intervals, temps, height), and common problems. For 'commonProblems', provide a detailed 'description' of the symptoms and a 'solution' formatted as a numbered list of specific steps. Return strictly valid JSON." }
+        { text: "Identify this plant. For the main result and for each 'similarPlant' entry, provide full botanical data including identification details, complete care parameters (intervals, temps, height), and common problems. Return strictly valid JSON." }
       ]
     },
     config: {
@@ -106,7 +106,7 @@ export const getPlantInfoByName = async (plantName: string): Promise<Identificat
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const response = await ai.models.generateContent({
     model: "gemini-3-flash-preview",
-    contents: `Provide botanical information and care guide for: ${plantName}. Also include 3 similar plants with their own basic care and identification data. For 'commonProblems', provide a detailed 'description' of the symptoms and a 'solution' formatted as a numbered list of specific steps. Return strictly valid JSON.`,
+    contents: `Provide botanical information and care guide for: ${plantName}. Also include 3 similar plants with their own basic care and identification data. Return strictly valid JSON.`,
     config: {
       responseMimeType: "application/json",
       responseSchema: {
@@ -131,17 +131,19 @@ export const getPlantInfoByName = async (plantName: string): Promise<Identificat
       }
     }
   });
-  return JSON.parse(cleanJsonResponse(response.text!));
+  const text = response.text;
+  if (!text) throw new Error("Plant search failed.");
+  return JSON.parse(cleanJsonResponse(text));
 };
 
 export const diagnoseHealth = async (base64Image: string): Promise<Omit<DiagnosticResult, 'id' | 'timestamp' | 'imageUrl'>> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const response = await ai.models.generateContent({
-    model: "gemini-3-flash-preview",
+    model: "gemini-3-pro-preview",
     contents: {
       parts: [
         { inlineData: { mimeType: "image/jpeg", data: base64Image } },
-        { text: "Analyze plant health. Return strictly JSON." }
+        { text: "Examine this plant for health issues. Return strictly valid JSON." }
       ]
     },
     config: {
@@ -149,7 +151,8 @@ export const diagnoseHealth = async (base64Image: string): Promise<Omit<Diagnost
       responseSchema: {
         type: Type.OBJECT,
         properties: {
-          plantName: { type: Type.STRING }, issue: { type: Type.STRING },
+          plantName: { type: Type.STRING }, 
+          issue: { type: Type.STRING },
           severity: { type: Type.STRING, enum: ["Healthy", "Warning", "Critical"] },
           advice: { type: Type.STRING }
         },
@@ -157,14 +160,16 @@ export const diagnoseHealth = async (base64Image: string): Promise<Omit<Diagnost
       }
     }
   });
-  return JSON.parse(cleanJsonResponse(response.text!));
+  const text = response.text;
+  if (!text) throw new Error("Diagnostic analysis failed.");
+  return JSON.parse(cleanJsonResponse(text));
 };
 
 export const findNearbyGardenCenters = async (lat: number, lng: number): Promise<GardenCenter[]> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const response = await ai.models.generateContent({
-    model: "gemini-2.5-flash",
-    contents: "Find 5 highly-rated garden centers near my location.",
+    model: "gemini-3-flash-preview",
+    contents: "Find 5 garden centers near my location.",
     config: {
       tools: [{ googleMaps: {} }],
       toolConfig: {
@@ -195,7 +200,7 @@ export const startBotanistChat = (): Chat => {
   return ai.chats.create({
     model: 'gemini-3-pro-preview',
     config: {
-      systemInstruction: 'You are a world-class botanist and plant care expert named Flora. You help users with plant identification, watering schedules, pest control, and general gardening advice. Be friendly, knowledgeable, and practical. If a user asks about toxicity, provide safety advice.',
+      systemInstruction: 'You are a world-class botanist named Flora. Help users with plant care. Be friendly and practical.',
     },
   });
 };

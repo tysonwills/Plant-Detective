@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { ChevronLeft, ShieldAlert, CheckCircle2, AlertTriangle, Activity, Pill, History, Share2 } from 'lucide-react';
 import { DiagnosticResult } from '../types';
@@ -29,7 +28,7 @@ const DiagnosisResultScreen: React.FC<DiagnosisResultScreenProps> = ({ result, o
   };
 
   return (
-    <div className="animate-in fade-in slide-in-from-bottom-10 duration-500 min-h-screen bg-[#F8FAFB] pb-20">
+    <div className="animate-in fade-in slide-in-from-bottom-10 duration-500 min-h-screen bg-[#F2F4F7] pb-20">
       {/* Header */}
       <div className="absolute top-12 left-0 right-0 z-20 px-6 flex justify-between items-center">
         <button 
@@ -50,7 +49,7 @@ const DiagnosisResultScreen: React.FC<DiagnosisResultScreenProps> = ({ result, o
           className="w-full h-full object-cover" 
           alt="Scanned plant" 
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#F8FAFB] to-transparent"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-[#F2F4F7] to-transparent"></div>
       </div>
 
       {/* Diagnostic Card */}

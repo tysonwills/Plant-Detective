@@ -1,4 +1,3 @@
-
 import React, { useRef } from 'react';
 import { Home, ClipboardList, Heart, User, Camera, Leaf, Crown, MessageSquare } from 'lucide-react';
 
@@ -23,10 +22,10 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, onCa
   };
 
   return (
-    <div className="flex flex-col min-h-screen max-w-md mx-auto bg-[#F8FAFB] shadow-xl relative overflow-hidden">
+    <div className="flex flex-col min-h-screen max-w-md mx-auto bg-[#F2F4F7] shadow-xl relative overflow-hidden">
       {/* Top Header Section */}
       {isMainTab && activeTab !== 'upsell' && (
-        <header className="px-6 pt-12 pb-4 flex justify-between items-center z-30 bg-[#F8FAFB]">
+        <header className="px-6 pt-12 pb-4 flex justify-between items-center z-30 bg-[#F2F4F7]">
           <button 
             onClick={() => handleTabClick('home')}
             className="flex items-center gap-2 active:scale-95 transition-transform"
