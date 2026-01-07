@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect, useRef } from 'react';
-import { ChevronLeft, Droplets, Sun, Sprout, ShieldAlert, Heart, Share2, Info, Lightbulb, CheckCircle, Leaf, Plus, Check, ChevronRight, Thermometer, AlertCircle, Sparkles, MapPin, ShoppingBag, Camera, X, RefreshCw, Bell, Clock, Shovel, Scissors, Calendar, Wind, FlaskConical, PartyPopper, Beaker, Mountain, Zap, Activity, Ruler, MoveUp, BarChart3, Waves, Sparkle, Wind as MistIcon, CheckCircle2, Scan, AlertTriangle, Stethoscope, HelpCircle, Copy, ArrowRight, MessageCircle, Twitter, Facebook, Link, Microscope, Search } from 'lucide-react';
+import { ChevronLeft, Droplets, Sun, Sprout, ShieldAlert, Heart, Share2, Info, Lightbulb, CheckCircle, Leaf, Plus, Check, ChevronRight, Thermometer, AlertCircle, Sparkles, MapPin, ShoppingBag, Camera, X, RefreshCw, Bell, Clock, Shovel, Scissors, Calendar, Wind, FlaskConical, PartyPopper, Beaker, Mountain, Zap, Activity, Ruler, MoveUp, BarChart3, Waves, Sparkle, Wind as MistIcon, CheckCircle2, Scan, AlertTriangle, Stethoscope, HelpCircle, Copy, ArrowRight, MessageCircle, Twitter, Facebook, Link, Microscope, Search, Fingerprint, Target, ImageIcon } from 'lucide-react';
 import { IdentificationResponse, WikiImage, Reminder } from '../types';
 
 interface PlantResultScreenProps {
@@ -38,6 +39,13 @@ const PlantResultScreen: React.FC<PlantResultScreenProps> = ({
   const [showLightChecker, setShowLightChecker] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'info' } | null>(null);
+  const [imageLoaded, setImageLoaded] = useState<Record<number, boolean>>({});
+
+  // Reset active image when new data/images arrive
+  useEffect(() => {
+    setActiveImg(0);
+    setImageLoaded({});
+  }, [data?.identification?.scientificName]);
 
   // Load and persist "Liked" state
   useEffect(() => {
@@ -106,9 +114,13 @@ const PlantResultScreen: React.FC<PlantResultScreenProps> = ({
     setActiveImg((prev) => (prev - 1 + images.length) % images.length);
   };
 
-  // If we have botanical data but no images, we still render the botanical UI but shimmer the images.
+  const handleImageLoad = (index: number) => {
+    setImageLoaded(prev => ({ ...prev, [index]: true }));
+  };
+
   const hasBotanicalData = !!data?.identification;
 
+  // GLOBAL LOADING STATE (Before Gemini text returns)
   if (!hasBotanicalData && (loading || !data)) {
     return (
       <div className="animate-in fade-in duration-500 pb-32 bg-[#F2F4F7] relative min-h-screen">
@@ -116,14 +128,24 @@ const PlantResultScreen: React.FC<PlantResultScreenProps> = ({
           <button onClick={onBack} className="bg-white/90 backdrop-blur-md p-2.5 rounded-2xl shadow-sm text-gray-800"><ChevronLeft size={24} /></button>
         </div>
         
-        <div className="relative h-[55vh] bg-emerald-50 overflow-hidden flex items-center justify-center">
-           <div className="absolute inset-0 bg-gradient-to-r from-emerald-50 via-emerald-100 to-emerald-50 animate-shimmer" style={{ backgroundSize: '200% 100%' }}></div>
-           <Sprout size={64} className="text-[#00D09C] animate-pulse opacity-40" />
+        {/* Carousel Skeleton */}
+        <div className="relative h-[55vh] bg-gray-100 overflow-hidden flex items-center justify-center">
+           <div className="absolute inset-0 bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 animate-shimmer" style={{ backgroundSize: '200% 100%' }}></div>
+           <div className="relative z-10 flex flex-col items-center gap-4 opacity-40">
+              <div className="bg-white/50 p-6 rounded-[2.5rem] shadow-sm animate-pulse">
+                <ImageIcon size={48} className="text-gray-400" />
+              </div>
+              <span className="text-[10px] font-black uppercase tracking-[0.4em] text-gray-500">Retrieving Visual Assets</span>
+           </div>
+           
+           <div className="absolute bottom-16 left-1/2 -translate-x-1/2 flex gap-2.5">
+             {[1,2,3].map(i => <div key={i} className="h-2 w-2 rounded-full bg-white/40 animate-pulse" />)}
+           </div>
         </div>
 
         <div className="px-8 -mt-12 relative z-10">
           <div className="mb-10 bg-white p-8 rounded-[3rem] shadow-sm border border-emerald-50">
-             <div className="w-16 h-5 bg-emerald-50 rounded-full mb-4 animate-pulse"></div>
+             <div className="w-24 h-5 bg-emerald-50 rounded-full mb-4 animate-pulse"></div>
              <h1 className="text-4xl font-black text-gray-900 mb-2 leading-tight tracking-tighter">
                 {placeholderName || "Identifying..."}
              </h1>
@@ -132,10 +154,11 @@ const PlantResultScreen: React.FC<PlantResultScreenProps> = ({
 
           <div className="space-y-4">
              {[1, 2, 3].map(i => (
-               <div key={i} className="bg-white p-6 rounded-[2.5rem] border border-gray-100 h-32 flex items-center gap-4">
-                  <div className="w-12 h-12 bg-gray-50 rounded-2xl animate-pulse"></div>
-                  <div className="flex-1 space-y-2">
-                     <div className="w-24 h-3 bg-gray-100 rounded-full animate-pulse"></div>
+               <div key={i} className="bg-white p-6 rounded-[2.5rem] border border-gray-100 h-32 flex items-center gap-4 overflow-hidden relative">
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-gray-50/50 to-transparent animate-shimmer" style={{ backgroundSize: '200% 100%' }}></div>
+                  <div className="w-12 h-12 bg-gray-50 rounded-2xl animate-pulse flex-shrink-0"></div>
+                  <div className="flex-1 space-y-3">
+                     <div className="w-1/3 h-3 bg-gray-100 rounded-full animate-pulse"></div>
                      <div className="w-full h-4 bg-emerald-50/50 rounded-full animate-pulse"></div>
                   </div>
                </div>
@@ -155,9 +178,14 @@ const PlantResultScreen: React.FC<PlantResultScreenProps> = ({
     );
   }
 
-  // Safe to destructure here as hasBotanicalData is true and data is not null
+  // BOTANICAL DATA LOADED (Wiki images might still be fetching)
   const { identification, care, commonProblems = [], similarPlants = [] } = data!;
   const displayRelatives = similarPlants.slice(0, 4);
+  const isImagesLoading = loading && images.length === 0;
+
+  const confidenceScore = identification.confidence ? 
+    (identification.confidence < 1 ? Math.round(identification.confidence * 100) : identification.confidence) : 
+    0;
 
   return (
     <div className="animate-in fade-in slide-in-from-right-4 duration-500 pb-32 bg-[#F2F4F7] relative">
@@ -172,6 +200,7 @@ const PlantResultScreen: React.FC<PlantResultScreenProps> = ({
         </div>
       )}
 
+      {/* Navigation Layer */}
       <div className="absolute top-12 left-0 right-0 z-20 px-6 flex justify-between items-center">
         <button 
           onClick={onBack}
@@ -195,16 +224,21 @@ const PlantResultScreen: React.FC<PlantResultScreenProps> = ({
         </div>
       </div>
 
+      {/* Optimized Carousel / Hero Section */}
       <div className="relative h-[55vh] bg-gray-900 group/slider overflow-hidden">
         {images.length > 0 ? (
           <>
             <div className="absolute inset-0 flex transition-transform duration-700 ease-out" style={{ transform: `translateX(-${activeImg * 100}%)` }}>
               {images.map((img, i) => (
-                <div key={i} className="min-w-full h-full">
+                <div key={i} className="min-w-full h-full relative">
+                  {!imageLoaded[i] && (
+                    <div className="absolute inset-0 bg-gray-200 animate-shimmer" style={{ backgroundSize: '200% 100%' }} />
+                  )}
                   <img 
                     src={img.imageUrl} 
                     alt={`${identification.commonName} view ${i + 1}`} 
-                    className="w-full h-full object-cover"
+                    onLoad={() => handleImageLoad(i)}
+                    className={`w-full h-full object-cover transition-opacity duration-700 ${imageLoaded[i] ? 'opacity-100' : 'opacity-0'}`}
                   />
                 </div>
               ))}
@@ -238,21 +272,42 @@ const PlantResultScreen: React.FC<PlantResultScreenProps> = ({
             </div>
           </>
         ) : (
-          <div className="w-full h-full flex items-center justify-center bg-emerald-50">
-            <div className="absolute inset-0 bg-gradient-to-r from-emerald-50 via-emerald-100 to-emerald-50 animate-shimmer" style={{ backgroundSize: '200% 100%' }}></div>
-            <Sprout size={64} className="text-[#00D09C] animate-pulse opacity-40" />
+          /* High-Fidelity Skeleton Loader for images */
+          <div className="w-full h-full flex items-center justify-center bg-gray-100">
+            <div className="absolute inset-0 bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 animate-shimmer" style={{ backgroundSize: '200% 100%' }}></div>
+            <div className="relative z-10 flex flex-col items-center gap-4 text-gray-400">
+               <div className="bg-white/50 p-6 rounded-[2.5rem] shadow-sm animate-pulse">
+                  <ImageIcon size={48} className="opacity-40" />
+               </div>
+               <div className="flex flex-col items-center gap-1">
+                 <span className="text-[10px] font-black uppercase tracking-[0.4em] opacity-40">Fetching Wiki Archives</span>
+                 <div className="flex gap-1">
+                    <div className="w-1 h-1 bg-current rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                    <div className="w-1 h-1 bg-current rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                    <div className="w-1 h-1 bg-current rounded-full animate-bounce"></div>
+                 </div>
+               </div>
+            </div>
           </div>
         )}
         <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-[#F2F4F7] via-[#F2F4F7]/40 to-transparent"></div>
       </div>
 
       <div className="px-8 -mt-12 relative z-10">
+        {/* Core Identity Info */}
         <div className="mb-10">
-          <div className="flex items-center gap-2 mb-4">
+          <div className="flex flex-wrap items-center gap-2 mb-4">
              <div className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-emerald-50 text-[#00D09C] rounded-full text-[10px] font-black uppercase tracking-widest border border-emerald-100/50">
               <CheckCircle size={12} />
               Botanist Verified
             </div>
+            
+            <div className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-white text-gray-900 rounded-full text-[10px] font-black uppercase tracking-widest border border-gray-100 shadow-sm">
+              <Target size={12} className="text-[#00D09C]" />
+              <span className="text-gray-400">Match:</span>
+              <span>{confidenceScore}%</span>
+            </div>
+
             {identification.isToxic && (
               <div className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-rose-950 text-white rounded-full text-[10px] font-black uppercase tracking-widest border border-rose-900 shadow-lg animate-pulse">
                 <ShieldAlert size={12} />
@@ -266,6 +321,32 @@ const PlantResultScreen: React.FC<PlantResultScreenProps> = ({
           </p>
         </div>
 
+        {/* Neural Analysis Section */}
+        <div className="mb-12 bg-white p-6 rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden relative group">
+           <div className="flex justify-between items-center mb-4">
+              <div className="flex items-center gap-3">
+                 <div className="bg-emerald-50 p-2.5 rounded-xl text-[#00D09C]">
+                    <Fingerprint size={20} />
+                 </div>
+                 <div>
+                    <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-400 leading-none mb-1">AI ID Confidence</h4>
+                    <p className="text-sm font-black text-gray-900 leading-none">Neural Verification</p>
+                 </div>
+              </div>
+              <span className="text-xl font-black text-[#00D09C] tracking-tighter">{confidenceScore}%</span>
+           </div>
+           <div className="relative h-2 bg-gray-50 rounded-full overflow-hidden">
+              <div 
+                className="absolute top-0 bottom-0 left-0 bg-[#00D09C] rounded-full transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(0,208,156,0.3)]"
+                style={{ width: `${confidenceScore}%` }}
+              ></div>
+           </div>
+           <p className="mt-4 text-[10px] font-bold text-gray-400 leading-relaxed italic">
+              "Our neural biological engine identifies specimens with high precision by analyzing morphological leaf structures and petal patterns."
+           </p>
+        </div>
+
+        {/* Detailed Stats */}
         <div className="mb-12">
           <h2 className="text-2xl font-black text-gray-900 tracking-tight mb-8">Vital Statistics</h2>
           <div className="flex flex-col gap-4">
@@ -288,8 +369,8 @@ const PlantResultScreen: React.FC<PlantResultScreenProps> = ({
               howTo={`Apply fertilizer during the specified months to promote robust cellular growth. ${care.fertilizer}`}
             />
             <VitalStatCard 
-              label="Leaf cleaning" 
-              value={`Weekly Hygiene`} 
+              label="Leaf hygiene" 
+              value={`Weekly Cleaning`} 
               totalSquares={Math.ceil((care.cleaningDaysInterval || 14) / 7)}
               filledSquares={1}
               icon={<Sparkle size={22} />} 
@@ -299,6 +380,7 @@ const PlantResultScreen: React.FC<PlantResultScreenProps> = ({
           </div>
         </div>
 
+        {/* Biological Protocol Card */}
         <div className="mb-12">
           <h2 className="text-2xl font-black text-gray-900 tracking-tight mb-6">Biological Protocol</h2>
           <div className="space-y-6">
@@ -325,8 +407,9 @@ const PlantResultScreen: React.FC<PlantResultScreenProps> = ({
           </div>
         </div>
 
+        {/* Toxicity Warning */}
         {identification.isToxic && (
-          <div className="bg-rose-100 p-7 rounded-[2.5rem] flex flex-col gap-5 mb-12 border-2 border-rose-200 shadow-sm">
+          <div className="bg-rose-100 p-7 rounded-[2.5rem] flex flex-col gap-5 mb-12 border-2 border-rose-200 shadow-sm animate-in slide-in-from-bottom-4">
             <div className="flex gap-4 items-center">
               <div className="bg-rose-700 text-white p-3 rounded-2xl shadow-lg">
                 <ShieldAlert size={24} />
@@ -364,6 +447,7 @@ const PlantResultScreen: React.FC<PlantResultScreenProps> = ({
           <HeightScaleCard height={care.estimatedHeight || "1m"} />
         </div>
 
+        {/* Common Problems / Diagnostics */}
         {commonProblems.length > 0 && (
           <div className="mb-16">
             <h2 className="text-2xl font-black text-gray-900 mb-8 flex items-center gap-4">
@@ -416,6 +500,7 @@ const PlantResultScreen: React.FC<PlantResultScreenProps> = ({
           </div>
         )}
 
+        {/* Botanical Substrate & Orientation */}
         <div className="mb-16">
           <h2 className="text-2xl font-black text-gray-900 mb-8 flex items-center gap-4">
             <div className="bg-[#00D09C] p-2 rounded-xl text-white shadow-lg"><Beaker size={20} /></div>
@@ -456,22 +541,25 @@ const PlantResultScreen: React.FC<PlantResultScreenProps> = ({
           </div>
         </div>
 
+        {/* Genetic Relatives with Improved Skeleton Loaders */}
         <div className="mb-16">
           <h2 className="text-2xl font-black text-gray-900 mb-8 flex items-center gap-4">
             <div className="bg-[#00D09C] p-2 rounded-xl text-white shadow-lg"><Microscope size={20} /></div>
             Genetic Relatives
           </h2>
           <div className="grid grid-cols-2 gap-5">
-            {displayRelatives.length > 0 ? displayRelatives.map((plant, i) => (
+            {!loading ? displayRelatives.map((plant, i) => (
               <button 
                 key={i}
                 onClick={() => onSearchSimilar?.(plant)}
-                className="flex flex-col bg-white rounded-[2.5rem] overflow-hidden border border-gray-100 shadow-sm active:scale-[0.97] transition-all text-left group h-full relative ring-1 ring-gray-100 hover:ring-[#00D09C]/40"
+                className="flex flex-col bg-white rounded-[2.5rem] overflow-hidden border border-gray-100 shadow-sm active:scale-[0.97] transition-all text-left group h-full relative ring-1 ring-gray-100 hover:ring-[#00D09C]/40 animate-in fade-in"
+                style={{ animationDelay: `${i * 100}ms` }}
               >
                 <div className="aspect-[4/5] w-full bg-gray-100 relative overflow-hidden">
                   <img 
                     src={plant.imageUrl || `https://picsum.photos/seed/${plant.name}/400/300`} 
                     alt={plant.name}
+                    loading="lazy"
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-emerald-900/90 via-emerald-800/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col items-center justify-center p-6 text-center">
@@ -497,16 +585,23 @@ const PlantResultScreen: React.FC<PlantResultScreenProps> = ({
                 </div>
               </button>
             )) : (
-              // Placeholder grid for relative plants while loading
+              /* Dedicated Relative Skeleton Loaders */
               [1, 2, 3, 4].map(i => (
-                <div key={i} className="bg-white rounded-[2.5rem] overflow-hidden border border-gray-100 h-64 relative">
-                   <div className="absolute inset-0 bg-gradient-to-r from-gray-50 via-gray-100 to-gray-50 animate-shimmer" style={{ backgroundSize: '200% 100%' }}></div>
+                <div key={i} className="bg-white rounded-[2.5rem] overflow-hidden border border-gray-100 h-64 relative flex flex-col">
+                   <div className="aspect-[4/5] w-full bg-gray-50 relative overflow-hidden">
+                      <div className="absolute inset-0 bg-gradient-to-r from-gray-50 via-gray-100 to-gray-50 animate-shimmer" style={{ backgroundSize: '200% 100%' }}></div>
+                   </div>
+                   <div className="p-5 space-y-3">
+                      <div className="h-3 w-3/4 bg-gray-50 rounded-full animate-pulse"></div>
+                      <div className="h-2 w-1/2 bg-gray-50 rounded-full animate-pulse"></div>
+                   </div>
                 </div>
               ))
             )}
           </div>
         </div>
 
+        {/* Main Actions */}
         <div className="flex flex-col gap-6 mb-12">
           {!hideAddButton && (
             <button 
@@ -554,6 +649,8 @@ const PlantResultScreen: React.FC<PlantResultScreenProps> = ({
     </div>
   );
 };
+
+// ... (Internal components like ShareModal, VitalStatCard, etc. remain unchanged)
 
 interface ShareModalProps {
   plantName: string;

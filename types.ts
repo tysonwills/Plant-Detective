@@ -65,6 +65,7 @@ export interface DiagnosticResult {
   timestamp: string;
   plantName: string;
   issue: string;
+  cause: string;
   severity: 'Healthy' | 'Warning' | 'Critical';
   advice: string;
   imageUrl?: string;

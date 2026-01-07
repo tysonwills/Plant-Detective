@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { Search, ChevronRight, Info, ClipboardList, Leaf, MapPin, BookOpen, X, Sparkles, Plus, Crown, Camera, Lightbulb, Droplets, Zap, Shovel, MessageSquare, Scan, Aperture, Fingerprint, Microscope, Beaker, Activity, Dna, Layers, Target, Cpu } from 'lucide-react';
 
@@ -344,7 +343,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate, onSearch, onAddToGa
               <Leaf size={24} />
             </div>
             <p className="text-gray-400 text-[10px] font-black uppercase tracking-[0.4em]">
-              FLORAID ECOSYSTEM
+              PLANTHOUND ECOSYSTEM
             </p>
             <div className="flex justify-center gap-6 mt-4">
               <button onClick={onShowTerms} className="text-gray-400 text-[10px] font-black uppercase tracking-widest border-b-2 border-transparent hover:border-gray-200 pb-1">Terms</button>

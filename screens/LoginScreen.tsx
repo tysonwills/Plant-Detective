@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Sprout, Mail, Lock, ArrowRight } from 'lucide-react';
 
@@ -15,7 +14,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, onShowTerms }) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onLogin(name || 'Gardener', email || 'demo@flora.id');
+    onLogin(name || 'Gardener', email || 'demo@planthound.id');
   };
 
   return (
@@ -28,7 +27,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, onShowTerms }) => {
         <div className="bg-white/20 backdrop-blur-md p-6 rounded-[3rem] mb-6 shadow-2xl border border-white/30">
           <Sprout size={64} className="text-white" />
         </div>
-        <h1 className="text-4xl font-bold mb-2 tracking-tight">FloraID</h1>
+        <h1 className="text-4xl font-bold mb-2 tracking-tight">PlantHound</h1>
         <p className="text-white/80 font-medium">Your companion in the botanical world</p>
       </div>
 

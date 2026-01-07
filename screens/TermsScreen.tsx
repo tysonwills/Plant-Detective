@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ShieldCheck, Lock, Eye, Info, FileText, Scale, AlertCircle, Trash2, Globe } from 'lucide-react';
 
@@ -53,19 +52,19 @@ const TermsScreen: React.FC<TermsScreenProps> = ({ onBack, initialTab = 'terms' 
                <div>
                  <h2 className="font-black text-blue-900 text-lg leading-tight mb-1">Our Agreement</h2>
                  <p className="text-blue-700/70 text-xs font-bold leading-relaxed">
-                   Please read these terms carefully before using FloraID.
+                   Please read these terms carefully before using PlantHound.
                  </p>
                </div>
             </div>
 
             <section className="prose prose-sm text-gray-700">
               <p className="font-medium leading-relaxed italic mb-8">
-                Welcome to the Plant Finder App! By using our app, you agree to the following terms and conditions. Please read them carefully.
+                Welcome to the PlantHound App! By using our app, you agree to the following terms and conditions. Please read them carefully.
               </p>
 
               <div className="space-y-6">
                 <LegalSection number="1" title="Acceptance of Terms" icon={<Info size={16}/>}>
-                  By downloading, accessing, or using the Plant Finder App (“App”), you agree to comply with these Terms and Conditions. If you do not agree, please do not use the App.
+                  By downloading, accessing, or using the PlantHound App (“App”), you agree to comply with these Terms and Conditions. If you do not agree, please do not use the App.
                 </LegalSection>
 
                 <LegalSection number="2" title="Use of the App" icon={<FileText size={16}/>}>
@@ -136,7 +135,7 @@ const TermsScreen: React.FC<TermsScreenProps> = ({ onBack, initialTab = 'terms' 
 
             <section className="prose prose-sm text-gray-700">
               <p className="font-medium leading-relaxed italic mb-8">
-                Your privacy is important to us. This Privacy Policy explains how Plant Finder App (“we,” “our,” or “us”) collects, uses, and protects your information when you use our app (“App”).
+                Your privacy is important to us. This Privacy Policy explains how PlantHound App (“we,” “our,” or “us”) collects, uses, and protects your information when you use our app (“App”).
               </p>
 
               <div className="space-y-6">

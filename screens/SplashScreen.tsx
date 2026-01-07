@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Sprout } from 'lucide-react';
 
@@ -19,7 +18,7 @@ const SplashScreen: React.FC = () => {
         </div>
         
         <div className="text-center">
-          <h1 className="text-5xl font-black mb-2 tracking-tighter">FloraID</h1>
+          <h1 className="text-5xl font-black mb-2 tracking-tighter">PlantHound</h1>
           <p className="text-white/80 font-bold uppercase tracking-[0.3em] text-[10px]">Botanical Intelligence</p>
         </div>
       </div>

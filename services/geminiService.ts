@@ -66,7 +66,7 @@ const identificationSchema = {
 export const identifyPlant = async (base64Image: string): Promise<IdentificationResponse> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const response = await ai.models.generateContent({
-    model: "gemini-3-pro-preview",
+    model: "gemini-3-flash-preview",
     contents: {
       parts: [
         { inlineData: { mimeType: "image/jpeg", data: base64Image } },
@@ -75,6 +75,7 @@ export const identifyPlant = async (base64Image: string): Promise<Identification
     },
     config: {
       responseMimeType: "application/json",
+      thinkingConfig: { thinkingBudget: 0 },
       responseSchema: {
         type: Type.OBJECT,
         properties: {
@@ -109,6 +110,7 @@ export const getPlantInfoByName = async (plantName: string): Promise<Identificat
     contents: `Provide botanical information and care guide for: ${plantName}. Also include 3 similar plants with their own basic care and identification data. Return strictly valid JSON.`,
     config: {
       responseMimeType: "application/json",
+      thinkingConfig: { thinkingBudget: 0 },
       responseSchema: {
         type: Type.OBJECT,
         properties: {
@@ -139,24 +141,26 @@ export const getPlantInfoByName = async (plantName: string): Promise<Identificat
 export const diagnoseHealth = async (base64Image: string): Promise<Omit<DiagnosticResult, 'id' | 'timestamp' | 'imageUrl'>> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const response = await ai.models.generateContent({
-    model: "gemini-3-pro-preview",
+    model: "gemini-3-flash-preview",
     contents: {
       parts: [
         { inlineData: { mimeType: "image/jpeg", data: base64Image } },
-        { text: "Examine this plant for health issues. Return strictly valid JSON." }
+        { text: "Examine this plant for health issues. Perform a clinical analysis of symptoms and specifically diagnose the underlying biological or environmental cause (etiology). Provide a step-by-step remedy. Return strictly valid JSON." }
       ]
     },
     config: {
       responseMimeType: "application/json",
+      thinkingConfig: { thinkingBudget: 0 },
       responseSchema: {
         type: Type.OBJECT,
         properties: {
           plantName: { type: Type.STRING }, 
           issue: { type: Type.STRING },
+          cause: { type: Type.STRING, description: "The underlying biological or environmental root cause of the observed symptoms." },
           severity: { type: Type.STRING, enum: ["Healthy", "Warning", "Critical"] },
-          advice: { type: Type.STRING }
+          advice: { type: Type.STRING, description: "Detailed recovery protocol." }
         },
-        required: ["plantName", "issue", "severity", "advice"]
+        required: ["plantName", "issue", "cause", "severity", "advice"]
       }
     }
   });
@@ -216,7 +220,7 @@ export const findNearbyGardenCenters = async (lat: number, lng: number): Promise
 export const startBotanistChat = (): Chat => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   return ai.chats.create({
-    model: 'gemini-3-pro-preview',
+    model: 'gemini-3-flash-preview',
     config: {
       systemInstruction: 'You are a world-class botanist named Flora. Help users with plant care. Be friendly and practical.',
     },

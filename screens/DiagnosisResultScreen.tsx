@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChevronLeft, ShieldAlert, CheckCircle2, AlertTriangle, Activity, Pill, History, Share2 } from 'lucide-react';
+import { ChevronLeft, ShieldAlert, CheckCircle2, AlertTriangle, Activity, Pill, History, Share2, Info, Settings2, Microscope, ArrowRight, ClipboardCheck, Sparkles, Zap, ShieldCheck } from 'lucide-react';
 import { DiagnosticResult } from '../types';
 
 interface DiagnosisResultScreenProps {
@@ -27,73 +27,205 @@ const DiagnosisResultScreen: React.FC<DiagnosisResultScreenProps> = ({ result, o
     }
   };
 
+  const getSeverityGlow = (severity: string) => {
+    switch (severity) {
+      case 'Healthy': return 'shadow-[#00D09C33]';
+      case 'Warning': return 'shadow-amber-200';
+      case 'Critical': return 'shadow-rose-200';
+      default: return 'shadow-gray-200';
+    }
+  };
+
+  // Helper to parse the advice into steps if it looks like a list
+  const recoverySteps = result.advice.split(/(?:\d+[\.\)]|\n|-)\s+/).filter(s => s.trim());
+
   return (
-    <div className="animate-in fade-in slide-in-from-bottom-10 duration-500 min-h-screen bg-[#F2F4F7] pb-20">
-      {/* Header */}
-      <div className="absolute top-12 left-0 right-0 z-20 px-6 flex justify-between items-center">
+    <div className="animate-in fade-in slide-in-from-right-10 duration-500 min-h-screen bg-[#F2F4F7] pb-32">
+      {/* Neural Scan Header Layer */}
+      <div className="absolute top-12 left-0 right-0 z-30 px-6 flex justify-between items-center">
         <button 
           onClick={onBack}
-          className="bg-white/90 backdrop-blur-md p-2.5 rounded-2xl shadow-sm text-gray-800 active:scale-90 transition-transform"
+          className="bg-white/90 backdrop-blur-xl p-3 rounded-2xl shadow-xl border border-white/40 text-gray-800 active:scale-90 transition-transform"
         >
           <ChevronLeft size={24} />
         </button>
-        <button className="bg-white/90 backdrop-blur-md p-2.5 rounded-2xl shadow-sm text-gray-800">
-          <Share2 size={24} />
-        </button>
+        <div className="flex gap-3">
+          <button className="bg-white/90 backdrop-blur-xl p-3 rounded-2xl shadow-xl border border-white/40 text-gray-800 active:scale-90 transition-transform">
+            <Share2 size={24} />
+          </button>
+        </div>
       </div>
 
-      {/* Scanned Image */}
-      <div className="h-[40vh] w-full relative">
+      {/* Hero Image Section with Scan Overlay */}
+      <div className="h-[50vh] w-full relative overflow-hidden bg-gray-900">
         <img 
           src={result.imageUrl || 'https://picsum.photos/seed/scan/800/600'} 
-          className="w-full h-full object-cover" 
-          alt="Scanned plant" 
+          className="w-full h-full object-cover opacity-80" 
+          alt="Scanned specimen" 
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#F2F4F7] to-transparent"></div>
-      </div>
+        
+        {/* Scan UI Elements */}
+        <div className="absolute inset-0 pointer-events-none">
+           <div className="absolute inset-[15%] border-2 border-dashed border-white/20 rounded-[3rem] animate-pulse"></div>
+           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24 border border-white/10 rounded-full flex items-center justify-center">
+              <div className="w-1 h-1 bg-white rounded-full"></div>
+           </div>
+           
+           {/* Top Right Data Labels */}
+           <div className="absolute top-32 right-8 text-right space-y-1">
+              <p className="text-[8px] font-black text-white/40 uppercase tracking-[0.3em]">Neural.Scan_Active</p>
+              <div className="h-0.5 w-12 bg-[#00D09C] ml-auto"></div>
+           </div>
 
-      {/* Diagnostic Card */}
-      <div className="px-8 -mt-20 relative z-10">
-        <div className="bg-white rounded-[3rem] p-8 shadow-xl border border-gray-100 mb-8">
-          <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border text-xs font-black uppercase tracking-widest mb-4 ${getSeverityStyles(result.severity)}`}>
-            {getSeverityIcon(result.severity)}
-            {result.severity} Status
-          </div>
-          
-          <h1 className="text-3xl font-black text-gray-900 mb-2 leading-tight">
-            {result.plantName}
-          </h1>
-          <p className="text-gray-500 font-medium mb-6 flex items-center gap-2">
-            <ShieldAlert size={18} className={result.severity === 'Critical' ? 'text-rose-700' : 'text-gray-400'} />
-            Detected Issue: <span className={`font-black uppercase tracking-tight ${result.severity === 'Critical' ? 'text-rose-700' : 'text-gray-900'}`}>{result.issue}</span>
-          </p>
-
-          <div className="h-px bg-gray-100 w-full mb-6"></div>
-
-          <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-            <Pill size={20} className="text-[#00D09C]" />
-            Recommended Remedy
-          </h3>
-          <p className="text-gray-600 leading-relaxed font-medium bg-emerald-50/50 p-6 rounded-[2rem] border border-emerald-50">
-            {result.advice}
-          </p>
+           {/* Bottom Left Status */}
+           <div className="absolute bottom-32 left-8 space-y-2">
+              <div className="flex gap-1">
+                 {[1,2,3].map(i => <div key={i} className="w-1.5 h-1.5 bg-[#00D09C] rounded-full animate-pulse" style={{ animationDelay: `${i*200}ms` }}></div>)}
+              </div>
+              <p className="text-[8px] font-black text-white/40 uppercase tracking-[0.3em]">Pathology_Locked</p>
+           </div>
         </div>
 
-        {/* Action Buttons */}
-        <div className="space-y-4">
+        <div className="absolute inset-x-0 bottom-0 h-64 bg-gradient-to-t from-[#F2F4F7] via-[#F2F4F7]/40 to-transparent"></div>
+      </div>
+
+      {/* Diagnostic Report Layer */}
+      <div className="px-8 -mt-24 relative z-20">
+        <div className="bg-white rounded-[4rem] p-10 shadow-2xl border border-gray-100 mb-10 overflow-hidden relative">
+          {/* Subtle Bio-Background */}
+          <div className="absolute top-0 right-0 w-48 h-48 bg-emerald-50/30 rounded-full blur-3xl -mr-24 -mt-24"></div>
+          
+          <div className="relative z-10">
+            {/* Status Header */}
+            <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
+               <div className={`inline-flex items-center gap-3 px-6 py-2.5 rounded-full border-2 text-[10px] font-black uppercase tracking-widest shadow-lg ${getSeverityStyles(result.severity)} ${getSeverityGlow(result.severity)}`}>
+                {getSeverityIcon(result.severity)}
+                {result.severity} Condition
+              </div>
+              <div className="flex items-center gap-2 bg-gray-50 px-4 py-2 rounded-2xl border border-gray-100">
+                 <Microscope size={14} className="text-[#00D09C]" />
+                 <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Lab Ref: {Math.floor(Math.random() * 100000)}</span>
+              </div>
+            </div>
+            
+            <h1 className="text-4xl font-black text-gray-900 mb-2 leading-[0.9] tracking-tighter">
+              {result.plantName}
+            </h1>
+            <p className="text-[10px] font-black text-[#00D09C] uppercase tracking-[0.4em] mb-10">Biological Health Assessment</p>
+            
+            {/* Clinical Insights Split View */}
+            <div className="grid grid-cols-1 gap-6 mb-12">
+              <div className="bg-white p-6 rounded-[2.5rem] border-2 border-gray-50 shadow-sm">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="bg-gray-50 p-2.5 rounded-xl text-gray-400">
+                    <Info size={18} />
+                  </div>
+                  <h3 className="text-[10px] font-black uppercase tracking-widest text-gray-400">Primary Symptoms</h3>
+                </div>
+                <p className="text-gray-900 font-bold text-lg leading-snug">
+                  {result.issue}
+                </p>
+              </div>
+
+              <div className="bg-amber-50/30 p-8 rounded-[3rem] border-2 border-amber-100 relative overflow-hidden group">
+                <div className="absolute top-0 right-0 p-4">
+                  <Zap size={20} className="text-amber-200 animate-pulse" />
+                </div>
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="bg-amber-100 text-amber-600 p-2.5 rounded-xl">
+                    <Settings2 size={18} />
+                  </div>
+                  <h3 className="text-[10px] font-black uppercase tracking-widest text-amber-600/60">Underlying Etiology (Root Cause)</h3>
+                </div>
+                <p className="text-amber-900 text-base font-bold leading-relaxed italic border-l-4 border-amber-200 pl-6 py-2">
+                  {result.cause}
+                </p>
+              </div>
+            </div>
+
+            {/* THE REMEDY: TREATMENT PROTOCOL */}
+            <div className="bg-emerald-500 rounded-[3.5rem] p-10 shadow-2xl shadow-emerald-200 relative overflow-hidden group">
+               {/* Decorative Sparkles */}
+               <div className="absolute top-0 right-0 -mr-10 -mt-10 w-40 h-40 bg-white/10 rounded-full blur-3xl group-hover:scale-125 transition-transform duration-1000"></div>
+               <div className="absolute bottom-0 left-0 -ml-10 -mb-10 w-40 h-40 bg-black/5 rounded-full blur-3xl"></div>
+
+               <div className="flex items-center gap-5 mb-10 relative z-10">
+                  <div className="bg-white text-emerald-600 p-4 rounded-[1.8rem] shadow-xl">
+                    <ClipboardCheck size={32} strokeWidth={2.5} />
+                  </div>
+                  <div>
+                    <h3 className="text-white text-2xl font-black tracking-tight leading-none mb-1">Treatment Protocol</h3>
+                    <div className="flex items-center gap-2">
+                       <span className="text-[10px] font-black text-emerald-100 uppercase tracking-widest opacity-80">Recovery Procedure</span>
+                       <div className="w-1 h-1 bg-emerald-200 rounded-full"></div>
+                       <ShieldCheck size={12} className="text-emerald-100" />
+                    </div>
+                  </div>
+               </div>
+
+               <div className="space-y-8 relative z-10">
+                  {recoverySteps.length > 0 ? (
+                    recoverySteps.map((step, idx) => (
+                      <div key={idx} className="flex gap-6 items-start animate-in fade-in slide-in-from-left-4" style={{ animationDelay: `${idx * 150}ms` }}>
+                        <div className="flex-shrink-0 w-10 h-10 rounded-2xl bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center text-white text-sm font-black shadow-lg">
+                          {idx + 1}
+                        </div>
+                        <div className="flex-1 pt-2">
+                           <p className="text-white font-bold leading-relaxed text-base">
+                            {step.trim()}
+                           </p>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-white font-bold leading-relaxed text-base italic opacity-90">
+                      {result.advice}
+                    </p>
+                  )}
+               </div>
+
+               <div className="mt-12 pt-8 border-t border-white/20 flex items-center justify-between relative z-10">
+                  <div className="flex items-center gap-2 text-emerald-100">
+                     <Sparkles size={16} />
+                     <span className="text-[10px] font-black uppercase tracking-widest">Scientific Guidance</span>
+                  </div>
+                  <div className="flex gap-1">
+                     {[1,2,3].map(dot => <div key={dot} className="w-1.5 h-1.5 bg-white/30 rounded-full"></div>)}
+                  </div>
+               </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Post-Diagnostic Actions */}
+        <div className="grid grid-cols-1 gap-5">
           <button 
             onClick={onBack}
-            className="w-full bg-[#00D09C] py-6 rounded-[2.5rem] text-white font-black text-lg shadow-xl shadow-[#00D09C44] active:scale-95 transition-transform flex items-center justify-center gap-3"
+            className="w-full bg-[#00D09C] py-8 rounded-[3.5rem] text-white font-black text-xl shadow-2xl shadow-[#00D09C44] active:scale-95 transition-transform flex items-center justify-center gap-5 border-b-8 border-emerald-700/20"
           >
-            <History size={20} />
-            Go to History
+            <History size={28} />
+            Save to History
           </button>
-          <button 
-            onClick={onBack}
-            className="w-full bg-white py-6 rounded-[2.5rem] text-gray-400 font-black text-lg border border-gray-100 active:scale-95 transition-transform"
-          >
-            Discard Scan
-          </button>
+          
+          <div className="flex gap-4">
+            <button 
+              onClick={onBack}
+              className="flex-1 bg-white py-6 rounded-[2.5rem] text-gray-400 font-black text-sm uppercase tracking-widest border border-gray-100 active:scale-95 transition-transform flex items-center justify-center gap-3"
+            >
+               Discard
+            </button>
+            <button 
+              onClick={onBack}
+              className="flex-1 bg-gray-900 text-white py-6 rounded-[2.5rem] font-black text-sm uppercase tracking-widest active:scale-95 transition-transform flex items-center justify-center gap-3"
+            >
+               Set Care Reminders
+               <ArrowRight size={18} />
+            </button>
+          </div>
+        </div>
+
+        <div className="mt-12 text-center pb-12">
+           <p className="text-[10px] font-black text-gray-300 uppercase tracking-[0.4em]">PlantHound Pathology v2.5</p>
         </div>
       </div>
     </div>

@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { MapPin, Navigation, Phone, Globe, Loader2, AlertCircle, Crosshair, Map as MapIcon, Compass, Info, Star, Clock, ExternalLink, ChevronRight, Filter, Search, Shovel, Leaf, Cpu, Activity, Zap, Satellite, Target, Radio, Store, RefreshCw } from 'lucide-react';
+import { MapPin, Navigation, Phone, Globe, Loader2, AlertCircle, Crosshair, Map as MapIcon, Compass, Info, Star, Clock, ExternalLink, ChevronRight, Filter, Search, Shovel, Leaf, Cpu, Activity, Zap, Satellite, Target, Radio, Store, RefreshCw, Locate, Waves, Orbit, Fingerprint, Layers } from 'lucide-react';
 import { GardenCenter } from '../types';
 import { findNearbyGardenCenters } from '../services/geminiService';
 
@@ -128,26 +128,64 @@ const MapScreen: React.FC = () => {
       </div>
 
       {/* Visual Map / Radar Area */}
-      <div className="flex-1 bg-[#F9FAFB] relative overflow-hidden">
-        {/* Subtle Map Grid / Topographic Feel */}
-        <div className="absolute inset-0 opacity-[0.03]" 
+      <div className="flex-1 bg-gray-900 relative overflow-hidden">
+        {/* Topo Map Background */}
+        <div className="absolute inset-0 opacity-[0.05]" 
              style={{ backgroundImage: 'radial-gradient(#00D09C 1px, transparent 1px)', backgroundSize: '40px 40px' }}></div>
-        <div className="absolute inset-0 opacity-[0.02]" 
-             style={{ backgroundImage: 'linear-gradient(#000 0.5px, transparent 0.5px), linear-gradient(90deg, #000 0.5px, transparent 0.5px)', backgroundSize: '100px 100px' }}></div>
+        <div className="absolute inset-0 opacity-[0.03]" 
+             style={{ backgroundImage: 'linear-gradient(#00D09C 0.5px, transparent 0.5px), linear-gradient(90deg, #00D09C 0.5px, transparent 0.5px)', backgroundSize: '100px 100px' }}></div>
         
+        {/* RADAR LOADING OVERLAY */}
         {loading && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-20 bg-white/40 backdrop-blur-[2px]">
-            <div className="relative">
-              <div className="w-80 h-80 border-4 border-[#00D09C]/10 rounded-full animate-ping"></div>
-              <div className="absolute inset-0 m-auto w-64 h-64 border-2 border-[#00D09C]/20 rounded-full animate-pulse"></div>
-              <div className="absolute inset-0 m-auto w-40 h-40 border-2 border-[#00D09C]/30 rounded-full animate-[spin_4s_linear_infinite]"></div>
+          <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-gray-900/90 backdrop-blur-md overflow-hidden animate-in fade-in duration-500">
+            {/* Pulsing Radar Sweep */}
+            <div className="relative w-[400px] h-[400px]">
+              <div className="absolute inset-0 rounded-full border border-emerald-500/20"></div>
+              <div className="absolute inset-8 rounded-full border border-emerald-500/10"></div>
+              <div className="absolute inset-20 rounded-full border border-emerald-500/5"></div>
+              
+              {/* The Sweep Line */}
+              <div className="absolute top-1/2 left-1/2 w-full h-[2px] -translate-y-1/2 -translate-x-1/2 origin-center animate-[spin_4s_linear_infinite] bg-gradient-to-r from-emerald-500/80 to-transparent"></div>
+              
+              {/* Flickering Detected Points */}
+              <div className="absolute top-[20%] left-[30%] w-2 h-2 bg-emerald-400 rounded-full animate-pulse shadow-[0_0_10px_#10b981]"></div>
+              <div className="absolute top-[70%] left-[60%] w-2 h-2 bg-emerald-400 rounded-full animate-pulse shadow-[0_0_10px_#10b981] [animation-delay:1s]"></div>
+              <div className="absolute top-[40%] left-[80%] w-2 h-2 bg-emerald-400 rounded-full animate-pulse shadow-[0_0_10px_#10b981] [animation-delay:2.5s]"></div>
+              
+              {/* Central Core */}
               <div className="absolute inset-0 flex items-center justify-center">
-                <div className="bg-white p-6 rounded-[2.5rem] shadow-xl border-2 border-[#00D09C]">
-                  <Loader2 className="animate-spin text-[#00D09C]" size={32} />
+                <div className="relative">
+                  <div className="absolute -inset-10 bg-emerald-500/10 rounded-full animate-ping"></div>
+                  <div className="bg-gray-800 p-8 rounded-[3rem] shadow-[0_0_50px_rgba(16,185,129,0.2)] border-2 border-emerald-500/30 flex flex-col items-center relative overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent"></div>
+                    <Satellite className="text-emerald-400 mb-2 animate-pulse" size={40} />
+                    <div className="flex gap-1 mb-1">
+                      {[1,2,3].map(i => <div key={i} className="w-1 h-1 bg-emerald-500 rounded-full animate-bounce" style={{ animationDelay: `${i*200}ms` }}></div>)}
+                    </div>
+                  </div>
                 </div>
               </div>
+
+              {/* Dynamic Coordinate Labels */}
+              <div className="absolute top-0 right-0 p-4 font-mono text-[9px] text-emerald-500/60 text-right">
+                <p>LAT: {userLocation?.lat.toFixed(4) || "INIT"}</p>
+                <p>LNG: {userLocation?.lng.toFixed(4) || "INIT"}</p>
+                <p>ALT: 142.3m</p>
+              </div>
+              
+              <div className="absolute bottom-0 left-0 p-4 font-mono text-[9px] text-emerald-500/60">
+                <p className="flex items-center gap-2"><Fingerprint size={10} /> Neural Identity: Botanical</p>
+                <p className="flex items-center gap-2"><Layers size={10} /> Sector: {activeFilter}</p>
+                <p className="flex items-center gap-2 animate-pulse"><Radio size={10} /> LINKING SATELLITE...</p>
+              </div>
             </div>
-            <p className="mt-8 text-[10px] font-black text-[#00D09C] uppercase tracking-[0.4em] animate-pulse">Establishing Geodesic Link</p>
+
+            <div className="mt-12 text-center relative z-10">
+              <h3 className="text-2xl font-black text-white tracking-tighter mb-2 leading-none uppercase italic">Geodesic Syncing</h3>
+              <p className="text-emerald-400 text-[10px] font-black uppercase tracking-[0.4em] flex items-center justify-center gap-3">
+                <Activity size={12} /> Triangulating Botanical Assets
+              </p>
+            </div>
           </div>
         )}
 

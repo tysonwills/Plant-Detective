@@ -34,7 +34,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, onCa
               <Leaf size={18} className="text-white" />
             </div>
             <div className="flex flex-col text-left">
-               <span className="font-bold text-xl text-gray-900 tracking-tight leading-none">FloraID</span>
+               <span className="font-bold text-xl text-gray-900 tracking-tight leading-none">PlantHound</span>
                {isSubscribed && <span className="text-[8px] font-bold text-[#D4AF37] uppercase tracking-[0.2em] mt-0.5">Premium</span>}
             </div>
           </button>
