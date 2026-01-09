@@ -1,5 +1,6 @@
+
 import React, { useState } from 'react';
-import { Sprout, Mail, Lock, ArrowRight } from 'lucide-react';
+import { Mail, Lock, ArrowRight, Sprout, Dog, Leaf, Search } from 'lucide-react';
 
 interface LoginScreenProps {
   onLogin: (name: string, email: string) => void;
@@ -24,8 +25,10 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, onShowTerms }) => {
       <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-black/5 rounded-full blur-3xl"></div>
 
       <div className="mb-12 flex flex-col items-center text-center text-white z-10">
-        <div className="bg-white/20 backdrop-blur-md p-6 rounded-[3rem] mb-6 shadow-2xl border border-white/30">
-          <Sprout size={64} className="text-white" />
+        <div className="bg-white/20 backdrop-blur-md p-6 rounded-[3rem] mb-6 shadow-2xl border border-white/30 text-white relative">
+          <Dog size={60} strokeWidth={2.5} />
+          <Leaf size={30} strokeWidth={3} className="absolute -top-2 -right-2 text-emerald-100 fill-emerald-500" />
+          <Search size={24} strokeWidth={3} className="absolute bottom-1 right-1 text-white" />
         </div>
         <h1 className="text-4xl font-bold mb-2 tracking-tight">PlantHound</h1>
         <p className="text-white/80 font-medium">Your companion in the botanical world</p>

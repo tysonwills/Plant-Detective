@@ -1,5 +1,10 @@
+
 import React from 'react';
-import { ChevronLeft, ShieldAlert, CheckCircle2, AlertTriangle, Activity, Pill, History, Share2, Info, Settings2, Microscope, ArrowRight, ClipboardCheck, Sparkles, Zap, ShieldCheck } from 'lucide-react';
+import { 
+  ChevronLeft, ShieldAlert, CheckCircle2, AlertTriangle, Activity, Pill, History, Share2, Info, 
+  Settings2, Microscope, ArrowRight, ClipboardCheck, Sparkles, Zap, ShieldCheck, 
+  Droplets, Scissors, Shovel, Wind, Sun, Sparkle, FlaskConical 
+} from 'lucide-react';
 import { DiagnosticResult } from '../types';
 
 interface DiagnosisResultScreenProps {
@@ -34,6 +39,19 @@ const DiagnosisResultScreen: React.FC<DiagnosisResultScreenProps> = ({ result, o
       case 'Critical': return 'shadow-rose-200';
       default: return 'shadow-gray-200';
     }
+  };
+
+  // Helper to assign appropriate icons to treatment steps
+  const getStepIcon = (text: string) => {
+    const t = text.toLowerCase();
+    if (t.includes('water') || t.includes('hydrate') || t.includes('moisture')) return <Droplets size={20} />;
+    if (t.includes('cut') || t.includes('prune') || t.includes('trim') || t.includes('remove')) return <Scissors size={20} />;
+    if (t.includes('soil') || t.includes('repot') || t.includes('potting')) return <Shovel size={20} />;
+    if (t.includes('spray') || t.includes('mist') || t.includes('neem') || t.includes('soap')) return <Wind size={20} />;
+    if (t.includes('sun') || t.includes('light') || t.includes('shade')) return <Sun size={20} />;
+    if (t.includes('fertilize') || t.includes('feed') || t.includes('nutrient')) return <FlaskConical size={20} />;
+    if (t.includes('clean') || t.includes('wipe') || t.includes('dust')) return <Sparkle size={20} />;
+    return <Zap size={20} />;
   };
 
   // Helper to parse the advice into steps if it looks like a list
@@ -143,54 +161,64 @@ const DiagnosisResultScreen: React.FC<DiagnosisResultScreenProps> = ({ result, o
               </div>
             </div>
 
-            {/* THE REMEDY: TREATMENT PROTOCOL */}
-            <div className="bg-emerald-500 rounded-[3.5rem] p-10 shadow-2xl shadow-emerald-200 relative overflow-hidden group">
-               {/* Decorative Sparkles */}
-               <div className="absolute top-0 right-0 -mr-10 -mt-10 w-40 h-40 bg-white/10 rounded-full blur-3xl group-hover:scale-125 transition-transform duration-1000"></div>
-               <div className="absolute bottom-0 left-0 -ml-10 -mb-10 w-40 h-40 bg-black/5 rounded-full blur-3xl"></div>
-
-               <div className="flex items-center gap-5 mb-10 relative z-10">
-                  <div className="bg-white text-emerald-600 p-4 rounded-[1.8rem] shadow-xl">
-                    <ClipboardCheck size={32} strokeWidth={2.5} />
-                  </div>
-                  <div>
-                    <h3 className="text-white text-2xl font-black tracking-tight leading-none mb-1">Treatment Protocol</h3>
-                    <div className="flex items-center gap-2">
-                       <span className="text-[10px] font-black text-emerald-100 uppercase tracking-widest opacity-80">Recovery Procedure</span>
-                       <div className="w-1 h-1 bg-emerald-200 rounded-full"></div>
-                       <ShieldCheck size={12} className="text-emerald-100" />
+            {/* THE REMEDY: RE-STYLED TREATMENT PROTOCOL */}
+            <div className="bg-gray-900 rounded-[3.5rem] p-1 shadow-2xl shadow-gray-300 relative overflow-hidden group">
+               {/* Protocol Aesthetic Header */}
+               <div className="bg-emerald-500 rounded-t-[3.2rem] p-8 pt-10 pb-6 relative overflow-hidden">
+                  <div className="absolute top-0 right-0 p-6 opacity-20"><ClipboardCheck size={120} strokeWidth={1} /></div>
+                  <div className="flex items-center gap-5 relative z-10">
+                    <div className="bg-white text-emerald-600 p-4 rounded-[1.8rem] shadow-2xl">
+                      <ShieldCheck size={32} strokeWidth={2.5} />
+                    </div>
+                    <div>
+                      <h3 className="text-white text-2xl font-black tracking-tight leading-none mb-1">Recovery Protocol</h3>
+                      <div className="flex items-center gap-2">
+                         <span className="text-[10px] font-black text-emerald-100 uppercase tracking-[0.3em] opacity-80 animate-pulse">Execute Sequence</span>
+                      </div>
                     </div>
                   </div>
                </div>
 
-               <div className="space-y-8 relative z-10">
+               {/* Step Modules Area */}
+               <div className="p-4 pt-6 pb-10 space-y-3">
                   {recoverySteps.length > 0 ? (
                     recoverySteps.map((step, idx) => (
-                      <div key={idx} className="flex gap-6 items-start animate-in fade-in slide-in-from-left-4" style={{ animationDelay: `${idx * 150}ms` }}>
-                        <div className="flex-shrink-0 w-10 h-10 rounded-2xl bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center text-white text-sm font-black shadow-lg">
-                          {idx + 1}
+                      <div 
+                        key={idx} 
+                        className="flex gap-5 items-center p-5 rounded-[2.2rem] bg-white/5 border border-white/10 hover:bg-white/10 transition-all duration-300 group/step animate-in fade-in slide-in-from-bottom-2"
+                        style={{ animationDelay: `${idx * 150}ms` }}
+                      >
+                        <div className="flex-shrink-0 w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 group-hover/step:scale-110 group-hover/step:bg-emerald-500 group-hover/step:text-white transition-all duration-500 shadow-inner">
+                           {getStepIcon(step)}
                         </div>
-                        <div className="flex-1 pt-2">
-                           <p className="text-white font-bold leading-relaxed text-base">
+                        <div className="flex-1">
+                           <div className="flex items-center gap-2 mb-0.5">
+                              <span className="text-[8px] font-black text-emerald-500/60 uppercase tracking-[0.2em]">Step 0{idx + 1}</span>
+                              <div className="h-px flex-1 bg-white/5"></div>
+                           </div>
+                           <p className="text-gray-300 font-bold leading-snug text-sm">
                             {step.trim()}
                            </p>
                         </div>
                       </div>
                     ))
                   ) : (
-                    <p className="text-white font-bold leading-relaxed text-base italic opacity-90">
-                      {result.advice}
-                    </p>
+                    <div className="p-8 text-center bg-white/5 rounded-[2rem] border border-white/5">
+                      <p className="text-white font-bold leading-relaxed text-base italic opacity-90">
+                        {result.advice}
+                      </p>
+                    </div>
                   )}
                </div>
 
-               <div className="mt-12 pt-8 border-t border-white/20 flex items-center justify-between relative z-10">
-                  <div className="flex items-center gap-2 text-emerald-100">
-                     <Sparkles size={16} />
-                     <span className="text-[10px] font-black uppercase tracking-widest">Scientific Guidance</span>
+               <div className="px-10 pb-8 pt-4 border-t border-white/5 flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-emerald-500">
+                     <div className="w-2 h-2 rounded-full bg-current animate-ping"></div>
+                     <span className="text-[9px] font-black uppercase tracking-[0.4em]">Biosync Active</span>
                   </div>
-                  <div className="flex gap-1">
-                     {[1,2,3].map(dot => <div key={dot} className="w-1.5 h-1.5 bg-white/30 rounded-full"></div>)}
+                  <div className="flex items-center gap-3">
+                     {[1,2,3].map(dot => <div key={dot} className="w-1.5 h-1.5 bg-white/20 rounded-full"></div>)}
+                     <span className="text-[8px] font-bold text-gray-500 uppercase tracking-widest leading-none">v4.2.0</span>
                   </div>
                </div>
             </div>

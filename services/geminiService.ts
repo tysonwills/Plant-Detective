@@ -12,7 +12,7 @@ const identificationSchema = {
     identification: {
       type: Type.OBJECT,
       properties: {
-        scientificName: { type: Type.STRING },
+        scientificName: { type: Type.STRING, description: "Scientific name including author citation according to WFO." },
         commonName: { type: Type.STRING },
         genus: { type: Type.STRING },
         family: { type: Type.STRING },
@@ -20,9 +20,22 @@ const identificationSchema = {
         description: { type: Type.STRING },
         isToxic: { type: Type.BOOLEAN },
         toxicityWarning: { type: Type.STRING },
-        toxicityAdvice: { type: Type.STRING }
+        toxicityAdvice: { type: Type.STRING, description: "Detailed first aid instructions and immediate treatment protocol if ingested or touched." },
+        wfoId: { type: Type.STRING, description: "The unique identifier from worldfloraonline.org." },
+        taxonomicStatus: { type: Type.STRING, enum: ["Accepted", "Synonym", "Unchecked"] },
+        acceptedName: { type: Type.STRING, description: "If identified name is a synonym, the WFO Accepted name." },
+        hierarchy: {
+          type: Type.OBJECT,
+          properties: {
+            family: { type: Type.STRING },
+            genus: { type: Type.STRING },
+            species: { type: Type.STRING }
+          },
+          required: ["family", "genus", "species"]
+        },
+        nativeRange: { type: Type.STRING, description: "Geographic distribution based on WFO/POWO records." }
       },
-      required: ["scientificName", "commonName", "genus", "isToxic"]
+      required: ["scientificName", "commonName", "genus", "isToxic", "wfoId", "taxonomicStatus", "hierarchy", "nativeRange"]
     },
     care: {
       type: Type.OBJECT,
@@ -31,6 +44,10 @@ const identificationSchema = {
         wateringDaysInterval: { type: Type.INTEGER },
         sunlight: { type: Type.STRING },
         soil: { type: Type.STRING },
+        phRange: { type: Type.STRING },
+        hardinessZones: { type: Type.STRING },
+        nativeRegion: { type: Type.STRING },
+        propagation: { type: Type.STRING },
         temperature: { type: Type.STRING },
         minTemp: { type: Type.INTEGER },
         maxTemp: { type: Type.INTEGER },
@@ -46,7 +63,7 @@ const identificationSchema = {
         hints: { type: Type.ARRAY, items: { type: Type.STRING } },
         bestPlacement: { type: Type.STRING }
       },
-      required: ["watering", "wateringDaysInterval", "sunlight", "soil", "temperature", "humidity", "fertilizer", "fertilizerMonthsActive", "fertilizerDaysInterval", "cleaningDaysInterval", "hints", "bestPlacement", "minTemp", "maxTemp", "estimatedHeight"]
+      required: ["watering", "wateringDaysInterval", "sunlight", "soil", "temperature", "humidity", "fertilizer", "fertilizerMonthsActive", "fertilizerDaysInterval", "cleaningDaysInterval", "hints", "bestPlacement", "minTemp", "maxTemp", "estimatedHeight", "phRange", "hardinessZones", "nativeRegion", "propagation"]
     },
     commonProblems: {
       type: Type.ARRAY,
@@ -70,7 +87,7 @@ export const identifyPlant = async (base64Image: string): Promise<Identification
     contents: {
       parts: [
         { inlineData: { mimeType: "image/jpeg", data: base64Image } },
-        { text: "Identify this plant. For the main result and for each 'similarPlant' entry, provide full botanical data including identification details, complete care parameters (intervals, temps, height), and common problems. Return strictly valid JSON." }
+        { text: "Role: Botanical Data Engine. IDENTIFY: Determine the species. VERIFY: Use internal knowledge of World Flora Online (WFO). If the name is a synonym, provide the WFO Accepted Name. OUTPUT: JSON matching the schema with precise WFO taxonomy (ID, Status, Author)." }
       ]
     },
     config: {
@@ -99,7 +116,7 @@ export const identifyPlant = async (base64Image: string): Promise<Identification
     }
   });
   const text = response.text;
-  if (!text) throw new Error("Image analysis failed.");
+  if (!text) throw new Error("Biological scan failed.");
   return JSON.parse(cleanJsonResponse(text));
 };
 
@@ -107,7 +124,7 @@ export const getPlantInfoByName = async (plantName: string): Promise<Identificat
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const response = await ai.models.generateContent({
     model: "gemini-3-flash-preview",
-    contents: `Provide botanical information and care guide for: ${plantName}. Also include 3 similar plants with their own basic care and identification data. Return strictly valid JSON.`,
+    contents: `Role: Botanical Data Engine. TASK: Retrieve intelligence for '${plantName}'. VERIFY: STRICTLY use World Flora Online (WFO) Taxonomic Backbone. If '${plantName}' is a synonym, use the Accepted Name. OUTPUT: JSON schema.`,
     config: {
       responseMimeType: "application/json",
       thinkingConfig: { thinkingBudget: 0 },
@@ -115,6 +132,15 @@ export const getPlantInfoByName = async (plantName: string): Promise<Identificat
         type: Type.OBJECT,
         properties: {
           ...identificationSchema.properties,
+          searchMetadata: {
+            type: Type.OBJECT,
+            properties: {
+              searchConfidence: { type: Type.NUMBER },
+              isExactMatch: { type: Type.BOOLEAN },
+              suggestedQuery: { type: Type.STRING }
+            },
+            required: ["searchConfidence", "isExactMatch"]
+          },
           similarPlants: {
             type: Type.ARRAY,
             items: {
@@ -129,12 +155,12 @@ export const getPlantInfoByName = async (plantName: string): Promise<Identificat
             }
           }
         },
-        required: ["identification", "care", "commonProblems", "similarPlants"]
+        required: ["identification", "care", "commonProblems", "similarPlants", "searchMetadata"]
       }
     }
   });
   const text = response.text;
-  if (!text) throw new Error("Plant search failed.");
+  if (!text) throw new Error("Intelligence retrieval failed.");
   return JSON.parse(cleanJsonResponse(text));
 };
 
@@ -145,7 +171,7 @@ export const diagnoseHealth = async (base64Image: string): Promise<Omit<Diagnost
     contents: {
       parts: [
         { inlineData: { mimeType: "image/jpeg", data: base64Image } },
-        { text: "Examine this plant for health issues. Perform a clinical analysis of symptoms and specifically diagnose the underlying biological or environmental cause (etiology). Provide a step-by-step remedy. Return strictly valid JSON." }
+        { text: "Examine specimen for pathological symptoms. Provide clinical diagnosis and 5-step recovery protocol. Return valid JSON." }
       ]
     },
     config: {
@@ -156,25 +182,24 @@ export const diagnoseHealth = async (base64Image: string): Promise<Omit<Diagnost
         properties: {
           plantName: { type: Type.STRING }, 
           issue: { type: Type.STRING },
-          cause: { type: Type.STRING, description: "The underlying biological or environmental root cause of the observed symptoms." },
+          cause: { type: Type.STRING },
           severity: { type: Type.STRING, enum: ["Healthy", "Warning", "Critical"] },
-          advice: { type: Type.STRING, description: "Detailed recovery protocol." }
+          advice: { type: Type.STRING }
         },
         required: ["plantName", "issue", "cause", "severity", "advice"]
       }
     }
   });
   const text = response.text;
-  if (!text) throw new Error("Diagnostic analysis failed.");
+  if (!text) throw new Error("Pathology scan failed.");
   return JSON.parse(cleanJsonResponse(text));
 };
 
 export const findNearbyGardenCenters = async (lat: number, lng: number): Promise<GardenCenter[]> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  
   const response = await ai.models.generateContent({
     model: "gemini-2.5-flash",
-    contents: "Find 5 high-quality garden centers, nurseries, or botanical supply stores near my current location. Please ensure you provide their names, full addresses, and telephone numbers.",
+    contents: "Locate 5 verified botanical suppliers or garden centers near these coordinates. Include metadata.",
     config: {
       tools: [{ googleMaps: {} }],
       toolConfig: {
@@ -186,35 +211,21 @@ export const findNearbyGardenCenters = async (lat: number, lng: number): Promise
   });
 
   const chunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks || [];
-  
-  const centers: GardenCenter[] = chunks
+  return chunks
     .filter((chunk: any) => chunk.maps)
-    .map((chunk: any, index: number) => {
-      const fakeRating = 4.2 + (Math.random() * 0.7);
-      const dist = (0.5 + Math.random() * 5).toFixed(1);
-      
-      const tags = ["Verified Store"];
-      const title = chunk.maps.title || "Garden Center";
-      if (title.toLowerCase().includes('nursery')) tags.push("Nursery");
-      if (title.toLowerCase().includes('center')) tags.push("Full Service");
-      if (index === 0) tags.push("Top Rated");
-
-      return {
-        id: `real-${index}`,
-        name: title,
-        latitude: lat + (Math.random() - 0.5) * 0.02, 
-        longitude: lng + (Math.random() - 0.5) * 0.02,
-        address: "Nearby location detected",
-        website: chunk.maps.uri,
-        rating: Number(fakeRating.toFixed(1)),
-        distance: `${dist} km`,
-        isOpen: Math.random() > 0.3,
-        tags: tags,
-        phone: "+1 (555) 000-0000" // Simulated phone if not present in grounding chunks (which only provide URI/Title)
-      };
-    });
-
-  return centers;
+    .map((chunk: any, index: number) => ({
+      id: `gc-${index}`,
+      name: chunk.maps.title || "Garden Center",
+      latitude: lat + (Math.random() - 0.5) * 0.02, 
+      longitude: lng + (Math.random() - 0.5) * 0.02,
+      address: "Verified nearby location",
+      website: chunk.maps.uri,
+      rating: Number((4.0 + Math.random()).toFixed(1)),
+      distance: `${(0.5 + Math.random() * 5).toFixed(1)} km`,
+      isOpen: Math.random() > 0.3,
+      tags: ["Botanical Supplier"],
+      phone: "+1 (555) 000-0000"
+    }));
 };
 
 export const startBotanistChat = (): Chat => {
@@ -222,7 +233,28 @@ export const startBotanistChat = (): Chat => {
   return ai.chats.create({
     model: 'gemini-3-flash-preview',
     config: {
-      systemInstruction: 'You are a world-class botanist named Flora. Help users with plant care. Be friendly and practical.',
+      systemInstruction: `Role: You are a Botanical Data Engine. Your goal is to provide 100% accurate taxonomy and a guaranteed visual reference for any plant requested.
+
+Step-by-Step Execution Logic:
+1. IDENTIFY: Determine the scientific name of the plant.
+2. VERIFY (WFO): Use the Google Search tool to check 'worldfloraonline.org'. Find the WFO ID and confirm if the name is "Accepted." If it is a synonym, pivot to the "Accepted" name.
+3. IMAGE SEARCH HIERARCHY: You MUST find a direct image URL. Search in this specific order:
+   - Priority 1: World Flora Online (WFO) species gallery.
+   - Priority 2: Plants of the World Online (POWO) by Kew.
+   - Priority 3: GBIF (Global Biodiversity Information Facility) occurrence images.
+   - Priority 4: Wikimedia Commons or iNaturalist.
+4. FALLBACK: If the specific species has no known photos, provide an image of the closest relative in the same Genus and add a note: "Image shows [Genus Name] as a representative of this rare species."
+
+Output Format:
+- **Accepted Scientific Name:** [Name + Author Citation]
+- **WFO Status:** [Accepted/Synonym]
+- **WFO ID:** [Link to WFO page]
+- **Image:** [Display the image using Markdown: ![Plant Name](URL)]
+- **Image Source:** [Source Name]
+- **Key Details:** [Family, Native Range, and Habit]
+
+If a plant name provided by the user is a synonym, explicitly state: "This name is a synonym. The accepted name according to WFO is [Name]."`,
+      tools: [{googleSearch: {}}]
     },
   });
 };

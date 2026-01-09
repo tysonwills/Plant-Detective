@@ -1,10 +1,11 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { ShieldAlert, CheckCircle2, AlertTriangle, Clock, Camera, Plus, ChevronRight, Stethoscope, Cpu, Activity, Zap, HeartPulse, Search, Fingerprint, Layers, Microscope, Bug, Droplets, Sun, FlaskConical, Filter, X, Aperture, Info, ShieldCheck, Sparkles, Thermometer, Wind, Beaker } from 'lucide-react';
-import { DiagnosticResult } from '../types';
+import { DiagnosticResult } from '../types.ts';
 
 interface DiagnosticsScreenProps {
   onStartDiagnosis?: () => void;
+  onHistoryItemClick?: (result: DiagnosticResult) => void;
 }
 
 interface Symptom {
@@ -38,7 +39,7 @@ const COMMON_SYMPTOMS: Symptom[] = [
   { id: '16', name: 'Salt Buildup', category: 'Nutrient', description: 'White, crusty residue on soil or pot rim.', protocol: 'Flush the soil with large amounts of distilled water until it runs clear from the bottom.', prevention: 'Use filtered or rain water instead of tap water high in mineral salts.', icon: <FlaskConical size={18} />, color: 'bg-gray-50 text-gray-600', severity: 'Warning' },
 ];
 
-const DiagnosticsScreen: React.FC<DiagnosticsScreenProps> = ({ onStartDiagnosis }) => {
+const DiagnosticsScreen: React.FC<DiagnosticsScreenProps> = ({ onStartDiagnosis, onHistoryItemClick }) => {
   const [history, setHistory] = useState<DiagnosticResult[]>([]);
   const [activeCategory, setActiveCategory] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState('');
@@ -257,7 +258,11 @@ const DiagnosticsScreen: React.FC<DiagnosticsScreenProps> = ({ onStartDiagnosis 
         ) : (
           <div className="space-y-6">
             {history.map(item => (
-              <div key={item.id} className="bg-white rounded-[2.5rem] p-5 shadow-sm border border-gray-100 overflow-hidden relative active:scale-[0.98] transition-all cursor-pointer group">
+              <div 
+                key={item.id} 
+                onClick={() => onHistoryItemClick?.(item)}
+                className="bg-white rounded-[2.5rem] p-5 shadow-sm border border-gray-100 overflow-hidden relative active:scale-[0.98] transition-all cursor-pointer group"
+              >
                 <div className="flex gap-5">
                   <div className="relative w-24 h-24 flex-shrink-0">
                     <img src={item.imageUrl} alt={item.plantName} className="w-full h-full rounded-[1.8rem] object-cover" />
@@ -294,7 +299,6 @@ const DiagnosticsScreen: React.FC<DiagnosticsScreenProps> = ({ onStartDiagnosis 
             
             <div className="flex items-center justify-between mb-8">
               <div className={`${selectedSymptom.color} p-5 rounded-[2rem] shadow-sm`}>
-                {/* FIX: Cast icon to ReactElement with any props to resolve the 'size' property type error. */}
                 {React.cloneElement(selectedSymptom.icon as React.ReactElement<any>, { size: 32 })}
               </div>
               <div className="text-right">
@@ -310,7 +314,7 @@ const DiagnosticsScreen: React.FC<DiagnosticsScreenProps> = ({ onStartDiagnosis 
             <p className="text-[#00D09C] text-[10px] font-black uppercase tracking-[0.4em] mb-8">Clinical Profile & Protocol</p>
 
             <div className="space-y-8">
-               <div className="bg-gray-50/50 p-6 rounded-[2rem] border border-gray-100">
+               <div className="bg-gray-50/50 p-6 rounded-[2.5rem] border border-gray-100">
                   <div className="flex items-center gap-2 mb-3">
                     <Info size={14} className="text-gray-400" />
                     <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-400">Biological Description</h4>

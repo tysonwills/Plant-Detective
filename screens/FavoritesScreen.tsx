@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Heart, Search, Sprout, ArrowRight, Trash2, Leaf, Sparkles } from 'lucide-react';
-import { IdentificationResponse, WikiImage } from '../types';
+import { IdentificationResponse, WikiImage } from '../types.ts';
 
 interface FavoriteItem {
   scientificName: string;

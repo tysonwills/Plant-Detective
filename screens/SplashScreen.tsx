@@ -1,5 +1,6 @@
+
 import React from 'react';
-import { Sprout } from 'lucide-react';
+import { Sprout, Dog, Leaf, Search } from 'lucide-react';
 
 /**
  * SplashScreen component displayed during initial app load.
@@ -13,8 +14,10 @@ const SplashScreen: React.FC = () => {
       <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-black/5 rounded-full blur-3xl animate-pulse"></div>
       
       <div className="flex flex-col items-center text-white z-10">
-        <div className="bg-white/20 backdrop-blur-md p-8 rounded-[3.5rem] mb-8 shadow-2xl border border-white/30 animate-bounce">
-          <Sprout size={80} className="text-white" />
+        <div className="bg-white p-6 rounded-[3.5rem] mb-8 shadow-2xl border border-white/30 animate-bounce overflow-hidden text-[#00D09C] relative">
+          <Dog size={80} strokeWidth={2.5} />
+          <Leaf size={40} strokeWidth={3} className="absolute -top-2 -right-2 text-emerald-100 fill-emerald-500" />
+          <Search size={30} strokeWidth={3} className="absolute bottom-2 right-2 text-[#00D09C]" />
         </div>
         
         <div className="text-center">

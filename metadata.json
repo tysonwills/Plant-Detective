@@ -1,6 +1,6 @@
 {
-  "name": "PlantHound - Planta Inspired Plant Care",
-  "description": "A comprehensive plant identification, diagnostics, and care app with Wikimedia integration and AI-powered health analysis.",
+  "name": "PlantHound",
+  "description": "AI-powered plant identification, health diagnostics, and care management.",
   "requestFramePermissions": [
     "camera",
     "geolocation"

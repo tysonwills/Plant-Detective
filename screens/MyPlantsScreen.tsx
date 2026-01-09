@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { Leaf, Droplets, Plus, Camera, Bell, BellOff, Calendar, ChevronRight, Trash2, X, AlertCircle, Search, History, CheckCircle2, FlaskConical, Scissors, Wind, Clock, Check, BarChart3, Activity, Sparkle, Shovel, Zap, HeartPulse, ShieldCheck, ShieldAlert, TrendingUp, TrendingDown, Info } from 'lucide-react';
+import { Leaf, Droplets, Plus, Camera, Bell, BellOff, Calendar, ChevronRight, Trash2, X, AlertCircle, Search, History, CheckCircle2, FlaskConical, Scissors, Wind, Clock, Check, BarChart3, Activity, Sparkle, Shovel, Zap, HeartPulse, ShieldCheck, ShieldAlert, TrendingUp, TrendingDown, Info, BellRing } from 'lucide-react';
 import { Reminder, DiagnosticResult } from '../types';
 
 interface MyPlantsScreenProps {
@@ -29,6 +29,7 @@ const MyPlantsScreen: React.FC<MyPlantsScreenProps> = ({
   const [showLogId, setShowLogId] = useState<string | null>(null);
   const [diagHistory, setDiagHistory] = useState<DiagnosticResult[]>([]);
   const [showHealthTooltip, setShowHealthTooltip] = useState<string | null>(null);
+  const [dismissPush, setDismissPush] = useState(false);
 
   useEffect(() => {
     if (typeof window !== 'undefined' && 'Notification' in window) {
@@ -42,7 +43,10 @@ const MyPlantsScreen: React.FC<MyPlantsScreenProps> = ({
 
   const todayStr = useMemo(() => new Date().toDateString(), []);
 
-  // Detailed Health Score Calculation
+  const overduePlantsCount = useMemo(() => {
+    return plants.filter(p => reminders.some(r => r.plantId === p.id && r.lastNotificationDate !== todayStr)).length;
+  }, [plants, reminders, todayStr]);
+
   const getPlantHealthDetails = (plant: any) => {
     let score = 100;
     const plantReminders = reminders.filter(r => r.plantId === plant.id);
@@ -54,12 +58,10 @@ const MyPlantsScreen: React.FC<MyPlantsScreenProps> = ({
       pathology: 0
     };
 
-    // 1. Adherence: Overdue tasks
     const overdueTasks = plantReminders.filter(r => r.lastNotificationDate !== todayStr);
     deductions.adherence = overdueTasks.length * 15;
     score -= deductions.adherence;
 
-    // 2. Maintenance: Watering and care recency
     const waterReminders = plantReminders.filter(r => r.type === 'Water');
     const lastWateredTask = plantHistory.filter(h => h.type === 'Water').sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0];
     
@@ -77,7 +79,6 @@ const MyPlantsScreen: React.FC<MyPlantsScreenProps> = ({
     }
     score -= deductions.maintenance;
 
-    // 3. Pathology: Diagnostic History
     const recentDiag = diagHistory
       .filter(d => d.plantName.toLowerCase() === plant.name.toLowerCase() || d.plantName.toLowerCase() === plant.species.toLowerCase())
       .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0];
@@ -127,16 +128,6 @@ const MyPlantsScreen: React.FC<MyPlantsScreenProps> = ({
     return <CheckCircle2 size={12} />;
   };
 
-  const getTaskColor = (type: string) => {
-    if (type.includes('Water')) return 'bg-blue-500';
-    if (type.includes('Fertil')) return 'bg-amber-500';
-    if (type.includes('Prun')) return 'bg-purple-500';
-    if (type.includes('Mist')) return 'bg-cyan-500';
-    if (type.includes('Clean')) return 'bg-emerald-500';
-    if (type.includes('Repot')) return 'bg-orange-500';
-    return 'bg-emerald-500';
-  };
-
   const getTaskLightColor = (type: string) => {
     if (type.includes('Water')) return 'bg-blue-50 text-blue-500';
     if (type.includes('Fertil')) return 'bg-amber-50 text-amber-500';
@@ -149,6 +140,40 @@ const MyPlantsScreen: React.FC<MyPlantsScreenProps> = ({
 
   return (
     <div className="px-6 pt-4 pb-24 relative min-h-full">
+      {/* PUSH POP UP CARD FOR OVERDUE TASKS */}
+      {overduePlantsCount > 0 && !dismissPush && (
+        <div className="mb-8 animate-in slide-in-from-top-10 duration-500">
+           <div className="bg-rose-500 rounded-[2.5rem] p-6 shadow-2xl shadow-rose-200 border-4 border-white flex flex-col gap-4 relative overflow-hidden group">
+              <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-700"></div>
+              <div className="flex justify-between items-start relative z-10">
+                 <div className="flex items-center gap-4">
+                    <div className="bg-white p-3 rounded-2xl shadow-lg text-rose-500 animate-bounce">
+                       <BellRing size={24} strokeWidth={2.5} />
+                    </div>
+                    <div>
+                       <span className="text-[10px] font-black text-white uppercase tracking-[0.3em] opacity-80 mb-0.5 block">Action Required</span>
+                       <h3 className="text-xl font-black text-white leading-none tracking-tight">Maintenance Overdue</h3>
+                    </div>
+                 </div>
+                 <button onClick={() => setDismissPush(true)} className="bg-white/20 p-2 rounded-xl text-white hover:bg-white/30 transition-colors">
+                    <X size={16} />
+                 </button>
+              </div>
+              <div className="bg-white/10 backdrop-blur-md rounded-[1.5rem] p-4 relative z-10 border border-white/20">
+                 <p className="text-white text-xs font-bold leading-relaxed">
+                    System analysis indicates <span className="font-black underline decoration-white/40 underline-offset-4">{overduePlantsCount} specimens</span> require immediate physiological intervention.
+                 </p>
+              </div>
+              <button onClick={() => {
+                const overdueSection = document.getElementById('routine-summary');
+                overdueSection?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }} className="w-full bg-white py-4 rounded-2xl text-rose-500 font-black text-[10px] uppercase tracking-[0.2em] shadow-lg active:scale-[0.98] transition-all flex items-center justify-center gap-2">
+                 Execute Protocols <ChevronRight size={14} strokeWidth={4} />
+              </button>
+           </div>
+        </div>
+      )}
+
       <div className="mb-8 flex justify-between items-end">
         <div>
           <h2 className="text-2xl font-bold text-gray-900 leading-tight">My Garden</h2>
@@ -166,7 +191,7 @@ const MyPlantsScreen: React.FC<MyPlantsScreenProps> = ({
 
       {/* Daily Routine Summary */}
       {dailyTasks.length > 0 && (
-        <div className="mb-10 animate-in fade-in slide-in-from-top-4 duration-500">
+        <div id="routine-summary" className="mb-10 animate-in fade-in slide-in-from-top-4 duration-500">
           <div className="flex items-center justify-between mb-4 px-2">
             <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest flex items-center gap-2">
               <Calendar size={16} className="text-[#00D09C]" />
@@ -295,14 +320,6 @@ const MyPlantsScreen: React.FC<MyPlantsScreenProps> = ({
                     {isLogVisible ? 'Close Log' : 'History'}
                   </button>
                 </div>
-
-                {/* Overdue Alert */}
-                {plantReminders.some(r => r.lastNotificationDate !== todayStr) && (
-                  <div className="mb-8 bg-rose-50 border border-rose-100 p-4 rounded-2xl flex items-center gap-3 animate-pulse">
-                    <AlertCircle size={18} className="text-rose-500" />
-                    <span className="text-[10px] font-black text-rose-700 uppercase tracking-widest">Action Required: Maintenance Overdue</span>
-                  </div>
-                )}
 
                 <div className="flex flex-wrap gap-2.5 mb-8">
                   {plantReminders.map((task) => {

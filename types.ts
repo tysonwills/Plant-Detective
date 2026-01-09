@@ -9,6 +9,16 @@ export interface PlantIdentification {
   isToxic: boolean;
   toxicityWarning?: string;
   toxicityAdvice?: string;
+  // WFO Specific Fields
+  wfoId: string;
+  taxonomicStatus: 'Accepted' | 'Synonym' | 'Unchecked';
+  acceptedName?: string;
+  hierarchy: {
+    family: string;
+    genus: string;
+    species: string;
+  };
+  nativeRange: string;
 }
 
 export interface CareGuide {
@@ -16,6 +26,10 @@ export interface CareGuide {
   wateringDaysInterval: number;
   sunlight: string;
   soil: string;
+  phRange?: string;
+  hardinessZones?: string;
+  nativeRegion?: string;
+  propagation?: string;
   temperature: string;
   minTemp?: number;
   maxTemp?: number;
@@ -42,6 +56,11 @@ export interface IdentificationResponse {
   identification: PlantIdentification;
   care: CareGuide;
   commonProblems: CommonProblem[];
+  searchMetadata?: {
+    searchConfidence: number;
+    isExactMatch: boolean;
+    suggestedQuery?: string;
+  };
   similarPlants: Array<Partial<IdentificationResponse> & {
     name: string;
     scientificName: string;

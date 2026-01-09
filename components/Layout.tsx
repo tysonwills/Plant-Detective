@@ -1,5 +1,6 @@
+
 import React, { useRef } from 'react';
-import { Home, ClipboardList, Heart, User, Camera, Leaf, Crown, MessageSquare } from 'lucide-react';
+import { Home, Heart, User, Camera, Leaf, Crown, MessageSquare, Sprout, Stethoscope, Dog, Search } from 'lucide-react';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -28,10 +29,12 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, onCa
         <header className="px-6 pt-12 pb-4 flex justify-between items-center z-30 bg-[#F2F4F7]">
           <button 
             onClick={() => handleTabClick('home')}
-            className="flex items-center gap-2 active:scale-95 transition-transform"
+            className="flex items-center gap-3 active:scale-95 transition-transform"
           >
-            <div className="bg-[#00D09C] w-8 h-8 rounded-xl flex items-center justify-center shadow-sm">
-              <Leaf size={18} className="text-white" />
+            <div className="bg-[#00D09C] w-10 h-10 rounded-xl flex items-center justify-center shadow-sm text-white relative">
+              <Dog size={22} strokeWidth={2.5} />
+              <Leaf size={10} strokeWidth={3} className="absolute -top-1 -right-1 text-emerald-900 fill-emerald-100" />
+              <Search size={10} strokeWidth={3} className="absolute bottom-0.5 right-0.5 text-white" />
             </div>
             <div className="flex flex-col text-left">
                <span className="font-bold text-xl text-gray-900 tracking-tight leading-none">PlantHound</span>
@@ -72,7 +75,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, onCa
       {/* Main Content */}
       <main 
         ref={mainContentRef}
-        className={`flex-1 overflow-y-auto scroll-smooth ${isMainTab && activeTab !== 'upsell' ? 'pb-24' : ''}`}
+        className={`flex-1 overflow-y-auto scroll-smooth ${isMainTab && activeTab !== 'upsell' && 'pb-24'}`}
       >
         {children}
       </main>
@@ -109,7 +112,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, onCa
           <div className="w-12" />
 
           <TabItem 
-            icon={<ClipboardList size={20} />} 
+            icon={<Stethoscope size={20} />} 
             label="Doctor" 
             isPro={!isSubscribed}
             active={activeTab === 'diagnose'} 

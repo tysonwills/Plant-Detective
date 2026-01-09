@@ -1,7 +1,8 @@
+
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, User, Bot, Loader2, Sparkles, MessageCircle, ChevronLeft, MoreHorizontal, Camera, Image as ImageIcon, Sprout, X } from 'lucide-react';
-import { ChatMessage } from '../types';
-import { startBotanistChat } from '../services/geminiService';
+import { Send, User, Bot, Loader2, Sparkles, MessageCircle, ChevronLeft, MoreHorizontal, Camera, Image as ImageIcon, Sprout, X, ExternalLink, Dog, Leaf, Search } from 'lucide-react';
+import { ChatMessage } from '../types.ts';
+import { startBotanistChat } from '../services/geminiService.ts';
 
 const ChatScreen: React.FC = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -18,7 +19,7 @@ const ChatScreen: React.FC = () => {
     setMessages([
       { 
         role: 'model', 
-        text: "Hi there! I'm Flora, your personal AI botanist. I've spent years studying plant pathology and urban gardening. How can I help your green friends today?", 
+        text: "System Online: Botanical Data Engine initialized.\n\nI provide WFO-verified taxonomy and visual references. What specimen shall we audit today?", 
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) 
       }
     ]);
@@ -55,7 +56,7 @@ const ChatScreen: React.FC = () => {
     // Create user message
     const userMsg: ChatMessage = {
       role: 'user',
-      text: input || (selectedImage ? "[Image shared]" : ""),
+      text: input || (selectedImage ? "[Specimen Image]" : ""),
       timestamp
     };
 
@@ -89,7 +90,7 @@ const ChatScreen: React.FC = () => {
 
       const modelMsg: ChatMessage = {
         role: 'model',
-        text: result.text || "I've analyzed the information, but I'm having trouble formulating a specific response. Could you provide more details?",
+        text: result.text || "Analysis incomplete. The WFO verification stream was interrupted. Please retry.",
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
       setMessages(prev => [...prev, modelMsg]);
@@ -97,12 +98,80 @@ const ChatScreen: React.FC = () => {
       console.error("Chat Error:", error);
       setMessages(prev => [...prev, {
         role: 'model',
-        text: "I'm having a little trouble connecting to my botanical database. Please try again in a moment!",
+        text: "Connection Error: Unable to access World Flora Online database. Please check signal.",
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       }]);
     } finally {
       setIsTyping(false);
     }
+  };
+
+  // Improved markdown renderer for images and links
+  const renderMessageText = (text: string) => {
+    // Regex to match markdown images: ![alt](url)
+    const imageRegex = /!\[([^\]]*)\]\(([^)]+)\)/g;
+    // Regex to match markdown links: [text](url) - excluding images
+    const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
+    
+    // Split by images first
+    const parts = [];
+    let lastIndex = 0;
+    let match;
+
+    while ((match = imageRegex.exec(text)) !== null) {
+      if (match.index > lastIndex) {
+        parts.push({ type: 'text', content: text.substring(lastIndex, match.index) });
+      }
+      parts.push({ type: 'image', alt: match[1], url: match[2] });
+      lastIndex = match.index + match[0].length;
+    }
+    if (lastIndex < text.length) {
+      parts.push({ type: 'text', content: text.substring(lastIndex) });
+    }
+
+    return parts.map((part, i) => {
+      if (part.type === 'image') {
+        return (
+          <div key={i} className="my-3 rounded-2xl overflow-hidden shadow-md border border-gray-200">
+            <img 
+              src={part.url} 
+              alt={part.alt} 
+              className="w-full h-auto max-h-64 object-cover bg-gray-100" 
+              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+            />
+            {part.alt && <p className="text-[9px] text-gray-500 bg-gray-50 px-3 py-1.5 font-bold uppercase">{part.alt}</p>}
+          </div>
+        );
+      } else {
+        // Process links in text parts
+        const linkParts = [];
+        let linkLastIndex = 0;
+        let linkMatch;
+        const subText = part.content;
+
+        while ((linkMatch = linkRegex.exec(subText)) !== null) {
+          if (linkMatch.index > linkLastIndex) {
+            linkParts.push(subText.substring(linkLastIndex, linkMatch.index));
+          }
+          linkParts.push(
+            <a 
+              key={`${i}-${linkMatch.index}`} 
+              href={linkMatch[2]} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-[#00D09C] underline underline-offset-2 font-bold inline-flex items-center gap-0.5 hover:text-emerald-700"
+            >
+              {linkMatch[1]} <ExternalLink size={10} strokeWidth={3} />
+            </a>
+          );
+          linkLastIndex = linkMatch.index + linkMatch[0].length;
+        }
+        if (linkLastIndex < subText.length) {
+          linkParts.push(subText.substring(linkLastIndex));
+        }
+        return <span key={i}>{linkParts}</span>;
+      }
+    });
   };
 
   return (
@@ -124,15 +193,17 @@ const ChatScreen: React.FC = () => {
       <div className="px-6 pt-12 pb-4 bg-white/80 backdrop-blur-xl shadow-sm flex items-center justify-between sticky top-0 z-20 border-b border-gray-100">
         <div className="flex items-center gap-4">
           <div className="relative">
-            <div className="w-12 h-12 rounded-[1.25rem] bg-[#EFFFFB] flex items-center justify-center border-2 border-emerald-100 shadow-sm text-[#00D09C]">
-              <Sprout size={28} strokeWidth={2.5} />
+            <div className="w-12 h-12 rounded-[1.25rem] bg-[#EFFFFB] flex items-center justify-center border-2 border-emerald-100 shadow-sm text-[#00D09C] relative">
+              <Dog size={24} strokeWidth={2.5} />
+              <Leaf size={12} strokeWidth={3} className="absolute -top-1 -right-1 text-emerald-900 fill-emerald-100" />
+              <Search size={12} strokeWidth={3} className="absolute bottom-0.5 right-0.5 text-[#00D09C]" />
             </div>
             <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-[#00D09C] border-2 border-white rounded-full"></div>
           </div>
           <div>
             <h1 className="text-lg font-black text-gray-900 leading-none">Flora</h1>
             <div className="flex items-center gap-1.5 mt-1">
-              <span className="text-[10px] font-black text-[#00D09C] uppercase tracking-widest">AI Botanist</span>
+              <span className="text-[10px] font-black text-[#00D09C] uppercase tracking-widest">Botanical Data Engine</span>
             </div>
           </div>
         </div>
@@ -153,19 +224,19 @@ const ChatScreen: React.FC = () => {
               key={i} 
               className={`flex ${isModel ? 'justify-start' : 'justify-end'} animate-in fade-in slide-in-from-bottom-2 duration-500`}
             >
-              <div className={`flex gap-3 max-w-[85%] ${isModel ? 'flex-row' : 'flex-row-reverse'}`}>
+              <div className={`flex gap-3 max-w-[90%] ${isModel ? 'flex-row' : 'flex-row-reverse'}`}>
                 {/* Message Icon Avatar */}
                 <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm border border-gray-100 mt-1 ${isModel ? 'bg-emerald-50 text-[#00D09C]' : 'bg-gray-100 text-gray-400'}`}>
                   {isModel ? <Bot size={18} /> : <User size={18} />}
                 </div>
 
-                <div className="flex flex-col gap-1.5">
-                  <div className={`p-4 rounded-[1.8rem] shadow-sm text-sm font-medium leading-relaxed whitespace-pre-wrap ${
+                <div className="flex flex-col gap-1.5 min-w-0">
+                  <div className={`p-5 rounded-[1.8rem] shadow-sm text-sm font-medium leading-relaxed whitespace-pre-wrap break-words ${
                     isModel 
                       ? 'bg-white text-gray-800 rounded-tl-none border border-gray-100' 
                       : 'bg-[#00D09C] text-white rounded-tr-none shadow-[#00D09C33]'
                   }`}>
-                    {msg.text}
+                    {renderMessageText(msg.text)}
                   </div>
                   <div className={`text-[8px] font-black uppercase tracking-wider opacity-40 px-2 ${!isModel ? 'text-right' : 'text-left'}`}>
                     {msg.timestamp}
@@ -257,21 +328,6 @@ const ChatScreen: React.FC = () => {
             <Send size={20} strokeWidth={2.5} />
           </button>
         </div>
-        
-        {/* Quick Tips */}
-        {!selectedImage && (
-          <div className="flex gap-2 overflow-x-auto mt-4 scrollbar-hide px-2">
-            {["Pest help", "Yellow leaves", "Watering tip", "Soil advice"].map((tip, idx) => (
-              <button 
-                key={idx}
-                onClick={() => setInput(tip)}
-                className="whitespace-nowrap px-4 py-1.5 bg-white border border-gray-100 rounded-full text-[10px] font-black text-gray-400 uppercase tracking-widest hover:border-[#00D09C] hover:text-[#00D09C] transition-all"
-              >
-                {tip}
-              </button>
-            ))}
-          </div>
-        )}
       </div>
     </div>
   );
