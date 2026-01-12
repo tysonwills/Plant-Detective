@@ -18,6 +18,11 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, onShowTerms }) => {
     onLogin(name || 'Gardener', email || 'demo@planthound.id');
   };
 
+  const handleSocialLogin = (provider: 'Google' | 'Facebook') => {
+    // Simulate social login integration
+    onLogin(`${provider} User`, `user@${provider.toLowerCase()}.com`);
+  };
+
   return (
     <div className="min-h-screen bg-[#00D09C] flex flex-col items-center justify-center px-8 relative overflow-hidden">
       {/* Decorative Orbs */}
@@ -106,8 +111,20 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, onShowTerms }) => {
         <div className="mt-8 pt-6 border-t border-gray-100 flex items-center justify-center gap-4">
            <span className="text-xs text-gray-400 font-medium">Or join with</span>
            <div className="flex gap-4">
-             <button className="w-10 h-10 bg-gray-50 rounded-full flex items-center justify-center text-gray-900 font-black hover:bg-gray-100 transition-colors">G</button>
-             <button className="w-10 h-10 bg-gray-50 rounded-full flex items-center justify-center text-gray-900 font-black hover:bg-gray-100 transition-colors">F</button>
+             <button 
+               type="button"
+               onClick={() => handleSocialLogin('Google')}
+               className="w-10 h-10 bg-gray-50 rounded-full flex items-center justify-center text-gray-900 font-black hover:bg-gray-100 transition-colors active:scale-90"
+             >
+               G
+             </button>
+             <button 
+               type="button"
+               onClick={() => handleSocialLogin('Facebook')}
+               className="w-10 h-10 bg-gray-50 rounded-full flex items-center justify-center text-gray-900 font-black hover:bg-gray-100 transition-colors active:scale-90"
+             >
+               F
+             </button>
            </div>
         </div>
       </div>

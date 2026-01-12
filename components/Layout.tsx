@@ -14,6 +14,7 @@ interface LayoutProps {
 const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, onCameraClick, userName, isSubscribed }) => {
   const isMainTab = ['home', 'my-plants', 'diagnose', 'favorites', 'profile', 'upsell', 'chat'].includes(activeTab);
   const mainContentRef = useRef<HTMLElement>(null);
+  const hideNav = ['upsell', 'terms'].includes(activeTab);
 
   const handleTabClick = (tab: string) => {
     if (tab === 'home' && activeTab === 'home') {
@@ -81,7 +82,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, onCa
       </main>
 
       {/* Floating Action Button */}
-      {activeTab !== 'upsell' && (
+      {!hideNav && (
         <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-50">
           <button 
             onClick={onCameraClick}
@@ -92,9 +93,9 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, onCa
         </div>
       )}
 
-      {/* Bottom Nav Bar - Background color updated to match brand green #00D09C */}
-      {activeTab !== 'upsell' && (
-        <nav className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-[#00D09C] border-t border-white/10 px-4 py-4 flex justify-between items-center z-40 rounded-t-[2.5rem] shadow-[0_-15px_40px_rgba(0,0,0,0.15)]">
+      {/* Bottom Nav Bar - Updated with Thicker Green Border */}
+      {!hideNav && (
+        <nav className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white/90 backdrop-blur-xl border-t-4 border-[#00D09C] px-4 py-4 flex justify-between items-center z-40 rounded-t-[2.5rem] shadow-[0_-15px_40px_rgba(0,0,0,0.05)]">
           <TabItem 
             icon={<Home size={22} />} 
             label="Home" 
@@ -135,19 +136,19 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, onCa
 const TabItem = ({ icon, label, active, onClick, isPro }: { icon: any, label: string, active: boolean, onClick: () => void, isPro?: boolean }) => (
   <button 
     onClick={onClick}
-    className={`flex flex-col items-center gap-1.5 transition-all duration-300 relative ${active ? 'text-white scale-110' : 'text-white/60 hover:text-white/80'}`}
+    className={`flex flex-col items-center gap-1.5 transition-all duration-300 relative ${active ? 'text-[#00D09C] scale-110' : 'text-gray-400 hover:text-gray-600'}`}
   >
     {isPro && (
-      <div className="absolute -top-1 -right-1 text-white drop-shadow-sm">
-        <Crown size={10} fill="currentColor" />
+      <div className="absolute -top-1 -right-1 text-[#D4AF37] drop-shadow-sm filter">
+        <Crown size={12} fill="currentColor" />
       </div>
     )}
-    <div className={`transition-all duration-300 ${active ? 'bg-white/20 p-2 rounded-2xl shadow-inner' : 'p-2'}`}>
+    <div className={`transition-all duration-300 ${active ? 'bg-[#00D09C]/10 p-2 rounded-2xl shadow-sm' : 'p-2'}`}>
       {icon}
     </div>
     <span className={`text-[8px] font-black uppercase tracking-widest leading-none ${active ? 'opacity-100 translate-y-0.5' : 'opacity-80'}`}>{label}</span>
     {active && (
-      <div className="absolute -bottom-1 w-1 h-1 bg-white rounded-full animate-pulse"></div>
+      <div className="absolute -bottom-1 w-1 h-1 bg-[#00D09C] rounded-full animate-pulse"></div>
     )}
   </button>
 );

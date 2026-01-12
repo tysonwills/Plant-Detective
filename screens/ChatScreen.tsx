@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, User, Bot, Loader2, Sparkles, MessageCircle, ChevronLeft, MoreHorizontal, Camera, Image as ImageIcon, Sprout, X, ExternalLink, Dog, Leaf, Search } from 'lucide-react';
+import { Send, User, Bot, Loader2, Sparkles, MessageCircle, ChevronLeft, MoreHorizontal, Camera, Image as ImageIcon, Sprout, X, ExternalLink, Dog, Leaf, Search, Stethoscope, Droplets, Scan, Lightbulb, ArrowRight } from 'lucide-react';
 import { ChatMessage } from '../types.ts';
 import { startBotanistChat } from '../services/geminiService.ts';
 
@@ -48,44 +48,24 @@ const ChatScreen: React.FC = () => {
     e.target.value = '';
   };
 
-  const handleSend = async () => {
-    if ((!input.trim() && !selectedImage) || !chatRef.current) return;
-
-    const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    
-    // Create user message
-    const userMsg: ChatMessage = {
-      role: 'user',
-      text: input || (selectedImage ? "[Specimen Image]" : ""),
-      timestamp
-    };
-
-    setMessages(prev => [...prev, userMsg]);
-    
-    const currentInput = input;
-    const currentImage = selectedImage;
-    
-    setInput('');
-    setSelectedImage(null);
-    setIsTyping(true);
-
-    try {
+  const sendMessageToModel = async (text: string, image?: { base64: string }) => {
+     if (!chatRef.current) return;
+     
+     setIsTyping(true);
+     try {
       let result;
-      if (currentImage) {
-        // Construct parts for multi-modal message
+      if (image) {
         const parts = [];
-        if (currentInput.trim()) parts.push({ text: currentInput });
+        if (text.trim()) parts.push({ text: text });
         parts.push({ 
           inlineData: { 
             mimeType: "image/jpeg", 
-            data: currentImage.base64 
+            data: image.base64 
           } 
         });
-        
-        // If message is the only parameter and accepts parts
         result = await chatRef.current.sendMessage({ message: parts });
       } else {
-        result = await chatRef.current.sendMessage({ message: currentInput });
+        result = await chatRef.current.sendMessage({ message: text });
       }
 
       const modelMsg: ChatMessage = {
@@ -106,14 +86,45 @@ const ChatScreen: React.FC = () => {
     }
   };
 
+  const handleSend = async () => {
+    if ((!input.trim() && !selectedImage) || !chatRef.current) return;
+
+    const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    
+    // Create user message
+    const userMsg: ChatMessage = {
+      role: 'user',
+      text: input || (selectedImage ? "[Specimen Image]" : ""),
+      timestamp
+    };
+
+    setMessages(prev => [...prev, userMsg]);
+    
+    const currentInput = input;
+    const currentImage = selectedImage;
+    
+    setInput('');
+    setSelectedImage(null);
+    
+    await sendMessageToModel(currentInput, currentImage || undefined);
+  };
+
+  const handleSuggestionClick = (prompt: string) => {
+    const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const userMsg: ChatMessage = {
+      role: 'user',
+      text: prompt,
+      timestamp
+    };
+    setMessages(prev => [...prev, userMsg]);
+    sendMessageToModel(prompt);
+  };
+
   // Improved markdown renderer for images and links
   const renderMessageText = (text: string) => {
-    // Regex to match markdown images: ![alt](url)
     const imageRegex = /!\[([^\]]*)\]\(([^)]+)\)/g;
-    // Regex to match markdown links: [text](url) - excluding images
     const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
     
-    // Split by images first
     const parts = [];
     let lastIndex = 0;
     let match;
@@ -143,7 +154,6 @@ const ChatScreen: React.FC = () => {
           </div>
         );
       } else {
-        // Process links in text parts
         const linkParts = [];
         let linkLastIndex = 0;
         let linkMatch;
@@ -174,6 +184,8 @@ const ChatScreen: React.FC = () => {
     });
   };
 
+  const showIntro = messages.length <= 1;
+
   return (
     <div className="flex flex-col h-full bg-[#F2F4F7] relative overflow-hidden">
       {/* Hidden File Input */}
@@ -182,7 +194,7 @@ const ChatScreen: React.FC = () => {
         ref={fileInputRef} 
         className="hidden" 
         accept="image/*"
-        onChange={handleFileSelect}
+        onChange={(e) => handleFileSelect(e)}
       />
 
       {/* Background Pattern */}
@@ -217,35 +229,111 @@ const ChatScreen: React.FC = () => {
         ref={scrollRef}
         className="flex-1 overflow-y-auto px-6 py-8 space-y-8 scroll-smooth relative z-10"
       >
-        {messages.map((msg, i) => {
-          const isModel = msg.role === 'model';
-          return (
-            <div 
-              key={i} 
-              className={`flex ${isModel ? 'justify-start' : 'justify-end'} animate-in fade-in slide-in-from-bottom-2 duration-500`}
-            >
-              <div className={`flex gap-3 max-w-[90%] ${isModel ? 'flex-row' : 'flex-row-reverse'}`}>
-                {/* Message Icon Avatar */}
-                <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm border border-gray-100 mt-1 ${isModel ? 'bg-emerald-50 text-[#00D09C]' : 'bg-gray-100 text-gray-400'}`}>
-                  {isModel ? <Bot size={18} /> : <User size={18} />}
+        {showIntro ? (
+          <div className="flex flex-col items-center justify-center min-h-[50vh] animate-in fade-in duration-700">
+             {/* Hero Avatar */}
+             <div className="relative mb-8 group">
+                <div className="absolute inset-0 bg-[#00D09C]/20 rounded-full blur-[40px] group-hover:bg-[#00D09C]/30 transition-colors duration-700"></div>
+                <div className="w-32 h-32 bg-white rounded-[2.5rem] flex items-center justify-center shadow-[0_20px_50px_-10px_rgba(0,208,156,0.3)] border-4 border-white relative z-10">
+                   <Bot size={56} className="text-[#00D09C]" strokeWidth={1.5} />
+                   <div className="absolute -bottom-2 -right-2 bg-emerald-500 text-white p-3 rounded-2xl shadow-lg border-4 border-white">
+                      <Sparkles size={16} fill="currentColor" />
+                   </div>
                 </div>
+             </div>
 
-                <div className="flex flex-col gap-1.5 min-w-0">
-                  <div className={`p-5 rounded-[1.8rem] shadow-sm text-sm font-medium leading-relaxed whitespace-pre-wrap break-words ${
-                    isModel 
-                      ? 'bg-white text-gray-800 rounded-tl-none border border-gray-100' 
-                      : 'bg-[#00D09C] text-white rounded-tr-none shadow-[#00D09C33]'
-                  }`}>
-                    {renderMessageText(msg.text)}
-                  </div>
-                  <div className={`text-[8px] font-black uppercase tracking-wider opacity-40 px-2 ${!isModel ? 'text-right' : 'text-left'}`}>
-                    {msg.timestamp}
+             <h2 className="text-3xl font-black text-gray-900 mb-2 tracking-tight text-center">Botanical Intelligence</h2>
+             <p className="text-gray-500 font-medium text-sm text-center max-w-xs leading-relaxed mb-10">
+                I can diagnose pathogens, identify species, or build custom care protocols. What is the task?
+             </p>
+
+             <div className="grid grid-cols-2 gap-4 w-full">
+                <button 
+                  onClick={() => handleSuggestionClick("I need to diagnose a sick plant. I will upload a photo.")}
+                  className="bg-white p-5 rounded-[2rem] border border-gray-100 shadow-sm flex flex-col items-start gap-3 active:scale-[0.98] transition-all hover:border-rose-200 hover:shadow-rose-100 group"
+                >
+                   <div className="bg-rose-50 text-rose-500 p-3 rounded-2xl group-hover:scale-110 transition-transform">
+                      <Stethoscope size={20} />
+                   </div>
+                   <div className="text-left">
+                      <span className="text-[9px] font-black text-rose-400 uppercase tracking-widest mb-1 block">Health Check</span>
+                      <p className="text-sm font-bold text-gray-700 group-hover:text-rose-600 transition-colors">Diagnose Issue</p>
+                   </div>
+                </button>
+
+                <button 
+                  onClick={() => handleSuggestionClick("Create a care guide for a [Plant Name].")}
+                  className="bg-white p-5 rounded-[2rem] border border-gray-100 shadow-sm flex flex-col items-start gap-3 active:scale-[0.98] transition-all hover:border-blue-200 hover:shadow-blue-100 group"
+                >
+                   <div className="bg-blue-50 text-blue-500 p-3 rounded-2xl group-hover:scale-110 transition-transform">
+                      <Droplets size={20} />
+                   </div>
+                   <div className="text-left">
+                      <span className="text-[9px] font-black text-blue-400 uppercase tracking-widest mb-1 block">Maintenance</span>
+                      <p className="text-sm font-bold text-gray-700 group-hover:text-blue-600 transition-colors">Care Guide</p>
+                   </div>
+                </button>
+
+                <button 
+                  onClick={() => handleSuggestionClick("Identify this plant from a photo.")}
+                  className="bg-white p-5 rounded-[2rem] border border-gray-100 shadow-sm flex flex-col items-start gap-3 active:scale-[0.98] transition-all hover:border-emerald-200 hover:shadow-emerald-100 group"
+                >
+                   <div className="bg-emerald-50 text-[#00D09C] p-3 rounded-2xl group-hover:scale-110 transition-transform">
+                      <Scan size={20} />
+                   </div>
+                   <div className="text-left">
+                      <span className="text-[9px] font-black text-emerald-400 uppercase tracking-widest mb-1 block">Taxonomy</span>
+                      <p className="text-sm font-bold text-gray-700 group-hover:text-[#00D09C] transition-colors">Identify Plant</p>
+                   </div>
+                </button>
+
+                <button 
+                  onClick={() => handleSuggestionClick("Tell me a rare botanical fact.")}
+                  className="bg-white p-5 rounded-[2rem] border border-gray-100 shadow-sm flex flex-col items-start gap-3 active:scale-[0.98] transition-all hover:border-amber-200 hover:shadow-amber-100 group"
+                >
+                   <div className="bg-amber-50 text-amber-500 p-3 rounded-2xl group-hover:scale-110 transition-transform">
+                      <Lightbulb size={20} />
+                   </div>
+                   <div className="text-left">
+                      <span className="text-[9px] font-black text-amber-400 uppercase tracking-widest mb-1 block">Trivia</span>
+                      <p className="text-sm font-bold text-gray-700 group-hover:text-amber-600 transition-colors">Surprise Me</p>
+                   </div>
+                </button>
+             </div>
+          </div>
+        ) : (
+          <>
+            {messages.map((msg, i) => {
+              const isModel = msg.role === 'model';
+              return (
+                <div 
+                  key={i} 
+                  className={`flex ${isModel ? 'justify-start' : 'justify-end'} animate-in fade-in slide-in-from-bottom-2 duration-500`}
+                >
+                  <div className={`flex gap-3 max-w-[90%] ${isModel ? 'flex-row' : 'flex-row-reverse'}`}>
+                    {/* Message Icon Avatar */}
+                    <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm border border-gray-100 mt-1 ${isModel ? 'bg-emerald-50 text-[#00D09C]' : 'bg-gray-100 text-gray-400'}`}>
+                      {isModel ? <Bot size={18} /> : <User size={18} />}
+                    </div>
+
+                    <div className="flex flex-col gap-1.5 min-w-0">
+                      <div className={`p-5 rounded-[1.8rem] shadow-sm text-sm font-medium leading-relaxed whitespace-pre-wrap break-words ${
+                        isModel 
+                          ? 'bg-white text-gray-800 rounded-tl-none border border-gray-100' 
+                          : 'bg-[#00D09C] text-white rounded-tr-none shadow-[#00D09C33]'
+                      }`}>
+                        {renderMessageText(msg.text)}
+                      </div>
+                      <div className={`text-[8px] font-black uppercase tracking-wider opacity-40 px-2 ${!isModel ? 'text-right' : 'text-left'}`}>
+                        {msg.timestamp}
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </div>
-          );
-        })}
+              );
+            })}
+          </>
+        )}
         
         {isTyping && (
           <div className="flex justify-start animate-in fade-in duration-300">

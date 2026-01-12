@@ -600,6 +600,7 @@ const App: React.FC = () => {
           />
         )}
         {activeTab === 'upsell' && <UpsellScreen onSubscribe={() => { const u = {...user, isSubscribed: true}; setUser(u); localStorage.setItem('flora_user', JSON.stringify(u)); setShowProSuccess(true); setActiveTab('home'); }} onBack={() => setActiveTab('home')} />}
+        {activeTab === 'terms' && <TermsScreen onBack={() => setActiveTab('profile')} initialTab={termsInitialTab} />}
       </div>
 
       {showProSuccess && (
