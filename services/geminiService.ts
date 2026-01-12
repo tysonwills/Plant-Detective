@@ -124,13 +124,27 @@ export const getPlantInfoByName = async (plantName: string): Promise<Identificat
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const response = await ai.models.generateContent({
     model: "gemini-3-flash-preview",
-    contents: `Role: Botanical Data Engine. TASK: Retrieve intelligence for '${plantName}'. VERIFY: STRICTLY use World Flora Online (WFO) Taxonomic Backbone. If '${plantName}' is a synonym, use the Accepted Name. OUTPUT: JSON schema.`,
+    contents: `Role: Botanical Data Engine acting as an Expert Search Assistant.
+    
+SEARCH RULES:
+1. Attempt to find the closest relevant plant match for '${plantName}'.
+2. You MUST handle:
+   - Partial matches (e.g., 'monst' -> 'Monstera deliciosa')
+   - Synonyms (e.g., 'Snake Plant' -> 'Dracaena trifasciata')
+   - Singular/plural variations
+   - Common spelling variations/typos
+3. VERIFY: STRICTLY use World Flora Online (WFO) Taxonomic Backbone for the final match.
+4. If a match is found, retrieve full intelligence.
+5. If NO results are found after attempting all variations, you MUST return a JSON object with a 'error' property set to "No results found". Do not hallucinate data.
+
+OUTPUT: JSON matching the provided schema, or the error object.`,
     config: {
       responseMimeType: "application/json",
       thinkingConfig: { thinkingBudget: 0 },
       responseSchema: {
         type: Type.OBJECT,
         properties: {
+          error: { type: Type.STRING }, // Field for graceful failure
           ...identificationSchema.properties,
           searchMetadata: {
             type: Type.OBJECT,
@@ -155,13 +169,19 @@ export const getPlantInfoByName = async (plantName: string): Promise<Identificat
             }
           }
         },
-        required: ["identification", "care", "commonProblems", "similarPlants", "searchMetadata"]
+        // We make identification optional here to handle the error case gracefully in JSON
       }
     }
   });
   const text = response.text;
   if (!text) throw new Error("Intelligence retrieval failed.");
-  return JSON.parse(cleanJsonResponse(text));
+  
+  const data = JSON.parse(cleanJsonResponse(text));
+  if (data.error === "No results found" || !data.identification) {
+    throw new Error("No results found.");
+  }
+  
+  return data;
 };
 
 export const diagnoseHealth = async (base64Image: string): Promise<Omit<DiagnosticResult, 'id' | 'timestamp' | 'imageUrl'>> => {
@@ -252,7 +272,7 @@ export const findNearbyGardenCenters = async (lat: number, lng: number): Promise
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const response = await ai.models.generateContent({
     model: "gemini-2.5-flash",
-    contents: "Locate 5 verified botanical suppliers or garden centers near these coordinates. Include metadata.",
+    contents: "Role: Geospatial Botanical Scout. TASK: Use the Google Maps tool to find 5 distinct garden centers, plant nurseries, or botanical supply stores near the provided latitude and longitude. IMPORTANT: You MUST use the `googleMaps` tool. Return the grounding chunks strictly.",
     config: {
       tools: [{ googleMaps: {} }],
       toolConfig: {
@@ -264,13 +284,19 @@ export const findNearbyGardenCenters = async (lat: number, lng: number): Promise
   });
 
   const chunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks || [];
+  
+  if (!chunks || chunks.length === 0) {
+    throw new Error("No verified botanical assets found in this sector.");
+  }
+
   return chunks
     .filter((chunk: any) => chunk.maps)
     .map((chunk: any, index: number) => ({
       id: `gc-${index}`,
       name: chunk.maps.title || "Garden Center",
-      latitude: lat + (Math.random() - 0.5) * 0.02, 
-      longitude: lng + (Math.random() - 0.5) * 0.02,
+      // Add slight offset for visualization purposes if precise lat/lng missing from chunk
+      latitude: lat + (Math.random() - 0.5) * 0.015, 
+      longitude: lng + (Math.random() - 0.5) * 0.015,
       address: "Verified nearby location",
       website: chunk.maps.uri,
       rating: Number((4.0 + Math.random()).toFixed(1)),
@@ -286,7 +312,12 @@ export const startBotanistChat = (): Chat => {
   return ai.chats.create({
     model: 'gemini-3-flash-preview',
     config: {
-      systemInstruction: `Role: You are a Botanical Data Engine. Your goal is to provide 100% accurate taxonomy and a guaranteed visual reference for any plant requested.
+      systemInstruction: `Role: You are a Botanical Data Engine & Expert Search Assistant. Your goal is to provide 100% accurate taxonomy and visual references.
+
+CORE SEARCH RULES:
+1. Always attempt to find the closest relevant plant match for the user's query.
+2. Handle partial matches, synonyms, and spelling variations gracefully.
+3. If no relevant results are found after attempts, clearly state "No results found."
 
 Step-by-Step Execution Logic:
 1. IDENTIFY: Determine the scientific name of the plant.
@@ -296,7 +327,7 @@ Step-by-Step Execution Logic:
    - Priority 2: Plants of the World Online (POWO) by Kew.
    - Priority 3: GBIF (Global Biodiversity Information Facility) occurrence images.
    - Priority 4: Wikimedia Commons or iNaturalist.
-4. FALLBACK: If the specific species has no known photos, provide an image of the closest relative in the same Genus and add a note: "Image shows [Genus Name] as a representative of this rare species."
+4. FALLBACK: If the specific species has no known photos, provide an image of the closest relative in the same Genus and add a note.
 
 Output Format:
 - **Accepted Scientific Name:** [Name + Author Citation]
@@ -304,9 +335,7 @@ Output Format:
 - **WFO ID:** [Link to WFO page]
 - **Image:** [Display the image using Markdown: ![Plant Name](URL)]
 - **Image Source:** [Source Name]
-- **Key Details:** [Family, Native Range, and Habit]
-
-If a plant name provided by the user is a synonym, explicitly state: "This name is a synonym. The accepted name according to WFO is [Name]."`,
+- **Key Details:** [Family, Native Range, and Habit]`,
       tools: [{googleSearch: {}}]
     },
   });

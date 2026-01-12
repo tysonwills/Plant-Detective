@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { MapPin, Navigation, Phone, Globe, Loader2, AlertCircle, Crosshair, Map as MapIcon, Compass, Info, Star, Clock, ExternalLink, ChevronRight, Filter, Search, Shovel, Leaf, Cpu, Activity, Zap, Satellite, Target, Radio, Store, RefreshCw, Locate, Waves, Orbit, Fingerprint, Layers } from 'lucide-react';
+import { MapPin, Navigation, Phone, Globe, Loader2, AlertCircle, Crosshair, Map as MapIcon, Compass, Info, Star, Clock, ExternalLink, ChevronRight, Filter, Search, Shovel, Leaf, Cpu, Activity, Zap, Satellite, Target, Radio, Store, RefreshCw, Locate, Waves, Orbit, Fingerprint, Layers, ScanLine, Database } from 'lucide-react';
 import { GardenCenter } from '../types';
 import { findNearbyGardenCenters } from '../services/geminiService';
 
@@ -11,11 +11,30 @@ const MapScreen: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [permissionStatus, setPermissionStatus] = useState<'prompt' | 'granted' | 'denied'>('prompt');
   const [activeFilter, setActiveFilter] = useState('All');
+  
+  // Animation State
+  const [loadingText, setLoadingText] = useState("Initializing Satellites");
+  const [scanningCount, setScanningCount] = useState(0);
+
+  const checkAndSelectKey = async () => {
+    if ((window as any).aistudio && typeof (window as any).aistudio.hasSelectedApiKey === 'function') {
+      const hasKey = await (window as any).aistudio.hasSelectedApiKey();
+      if (!hasKey && typeof (window as any).aistudio.openSelectKey === 'function') {
+        await (window as any).aistudio.openSelectKey();
+        return true;
+      }
+    }
+    return true;
+  };
 
   const fetchStores = async (lat: number, lng: number) => {
     try {
       setLoading(true);
       setError(null);
+      
+      // Ensure we have a valid key before requesting
+      await checkAndSelectKey();
+
       const realStores = await findNearbyGardenCenters(lat, lng);
       setCenters(realStores);
     } catch (err: any) {
@@ -26,7 +45,16 @@ const MapScreen: React.FC = () => {
     }
   };
 
-  const requestGPS = useCallback((silent: boolean = false) => {
+  const requestGPS = useCallback((silent: boolean = false, useDemo: boolean = false) => {
+    if (useDemo) {
+        // San Francisco Demo Coords
+        const demoCoords = { lat: 37.7749, lng: -122.4194 };
+        setUserLocation(demoCoords);
+        setPermissionStatus('granted');
+        if (!silent) fetchStores(demoCoords.lat, demoCoords.lng);
+        return;
+    }
+
     if (!navigator.geolocation) {
       setError("Biological geolocation unavailable in this browser.");
       setPermissionStatus('denied');
@@ -38,7 +66,7 @@ const MapScreen: React.FC = () => {
 
     const geoOptions = {
       enableHighAccuracy: true,
-      timeout: 10000,
+      timeout: 15000, 
       maximumAge: 0
     };
 
@@ -54,15 +82,12 @@ const MapScreen: React.FC = () => {
         setPermissionStatus('denied');
         console.warn('Geolocation error:', err);
         
-        if (err.code === 1) {
-          setError("Location access denied. Please enable GPS in your device settings.");
-        } else if (err.code === 2) {
-          setError("Location unavailable. Check your network or GPS signal.");
-        } else if (err.code === 3) {
-          setError("GPS request timed out. Please try again in an open area.");
-        } else {
-          setError("GPS Signal Lost.");
-        }
+        let msg = "GPS Signal Lost.";
+        if (err.code === 1) msg = "Location access denied. Please enable GPS.";
+        else if (err.code === 2) msg = "Location unavailable. Check network.";
+        else if (err.code === 3) msg = "GPS request timed out.";
+        
+        setError(msg);
       },
       geoOptions
     );
@@ -71,6 +96,36 @@ const MapScreen: React.FC = () => {
   useEffect(() => {
     requestGPS();
   }, [requestGPS]);
+
+  // Loading Animation Loop
+  useEffect(() => {
+    if (loading) {
+      setScanningCount(0);
+      const msgs = [
+        "Aligning Geospatial Grid...",
+        "Triangulating User Position...",
+        "Scanning Sector 7G...",
+        "Ping: Botanical Assets...",
+        "Verifying Vendor Metadata..."
+      ];
+      let i = 0;
+      setLoadingText(msgs[0]);
+
+      const msgInterval = setInterval(() => {
+        i = (i + 1) % msgs.length;
+        setLoadingText(msgs[i]);
+      }, 1200);
+
+      const countInterval = setInterval(() => {
+         setScanningCount(prev => prev + Math.floor(Math.random() * 15) + 3);
+      }, 100);
+
+      return () => {
+        clearInterval(msgInterval);
+        clearInterval(countInterval);
+      };
+    }
+  }, [loading]);
 
   const filteredCenters = useMemo(() => {
     if (activeFilter === 'All') return centers;
@@ -137,15 +192,15 @@ const MapScreen: React.FC = () => {
         
         {/* RADAR LOADING OVERLAY */}
         {loading && (
-          <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-gray-900/90 backdrop-blur-md overflow-hidden animate-in fade-in duration-500">
+          <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-gray-900/95 backdrop-blur-xl overflow-hidden animate-in fade-in duration-500">
             {/* Pulsing Radar Sweep */}
-            <div className="relative w-[400px] h-[400px]">
+            <div className="relative w-[400px] h-[400px] mb-8">
               <div className="absolute inset-0 rounded-full border border-emerald-500/20"></div>
               <div className="absolute inset-8 rounded-full border border-emerald-500/10"></div>
               <div className="absolute inset-20 rounded-full border border-emerald-500/5"></div>
               
               {/* The Sweep Line */}
-              <div className="absolute top-1/2 left-1/2 w-full h-[2px] -translate-y-1/2 -translate-x-1/2 origin-center animate-[spin_4s_linear_infinite] bg-gradient-to-r from-emerald-500/80 to-transparent"></div>
+              <div className="absolute top-1/2 left-1/2 w-full h-[2px] -translate-y-1/2 -translate-x-1/2 origin-center animate-[spin_3s_linear_infinite] bg-gradient-to-r from-emerald-500/80 to-transparent shadow-[0_0_20px_#10b981]"></div>
               
               {/* Flickering Detected Points */}
               <div className="absolute top-[20%] left-[30%] w-2 h-2 bg-emerald-400 rounded-full animate-pulse shadow-[0_0_10px_#10b981]"></div>
@@ -160,7 +215,7 @@ const MapScreen: React.FC = () => {
                     <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent"></div>
                     <Satellite className="text-emerald-400 mb-2 animate-pulse" size={40} />
                     <div className="flex gap-1 mb-1">
-                      {[1,2,3].map(i => <div key={i} className="w-1 h-1 bg-emerald-500 rounded-full animate-bounce" style={{ animationDelay: `${i*200}ms` }}></div>)}
+                      {[1,2,3].map(i => <div key={i} className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-bounce" style={{ animationDelay: `${i*100}ms` }}></div>)}
                     </div>
                   </div>
                 </div>
@@ -168,22 +223,32 @@ const MapScreen: React.FC = () => {
 
               {/* Dynamic Coordinate Labels */}
               <div className="absolute top-0 right-0 p-4 font-mono text-[9px] text-emerald-500/60 text-right">
-                <p>LAT: {userLocation?.lat.toFixed(4) || "INIT"}</p>
-                <p>LNG: {userLocation?.lng.toFixed(4) || "INIT"}</p>
+                <p>LAT: {userLocation?.lat.toFixed(4) || "ACQUIRING..."}</p>
+                <p>LNG: {userLocation?.lng.toFixed(4) || "ACQUIRING..."}</p>
                 <p>ALT: 142.3m</p>
               </div>
               
               <div className="absolute bottom-0 left-0 p-4 font-mono text-[9px] text-emerald-500/60">
-                <p className="flex items-center gap-2"><Fingerprint size={10} /> Neural Identity: Botanical</p>
+                <p className="flex items-center gap-2"><Fingerprint size={10} /> Neural ID: Botanical</p>
                 <p className="flex items-center gap-2"><Layers size={10} /> Sector: {activeFilter}</p>
-                <p className="flex items-center gap-2 animate-pulse"><Radio size={10} /> LINKING SATELLITE...</p>
+                <p className="flex items-center gap-2 animate-pulse"><Radio size={10} /> LINK ESTABLISHED</p>
               </div>
             </div>
 
-            <div className="mt-12 text-center relative z-10">
-              <h3 className="text-2xl font-black text-white tracking-tighter mb-2 leading-none uppercase italic">Geodesic Syncing</h3>
-              <p className="text-emerald-400 text-[10px] font-black uppercase tracking-[0.4em] flex items-center justify-center gap-3">
-                <Activity size={12} /> Triangulating Botanical Assets
+            <div className="mt-8 text-center relative z-10 w-full max-w-xs mx-auto">
+              <div className="flex items-center justify-between mb-2">
+                 <span className="text-[10px] font-black text-emerald-500/80 uppercase tracking-widest">Candidates Scanned</span>
+                 <span className="text-2xl font-black text-white font-mono">{scanningCount}</span>
+              </div>
+              <div className="h-1 bg-gray-800 rounded-full overflow-hidden mb-6">
+                 <div className="h-full bg-emerald-500 animate-[shimmer_2s_infinite] w-full origin-left"></div>
+              </div>
+
+              <h3 className="text-xl font-black text-white tracking-tighter mb-2 leading-none uppercase italic animate-pulse">
+                {loadingText}
+              </h3>
+              <p className="text-gray-500 text-[10px] font-black uppercase tracking-[0.4em] flex items-center justify-center gap-3">
+                <Activity size={12} /> Live Uplink Active
               </p>
             </div>
           </div>
@@ -303,12 +368,24 @@ const MapScreen: React.FC = () => {
                         </div>
                       )}
 
-                      <button 
-                        onClick={() => requestGPS()}
-                        className="w-full bg-[#00D09C] text-white py-5 rounded-[2.5rem] font-black text-xs uppercase tracking-[0.3em] flex items-center justify-center gap-3 transition-all shadow-xl shadow-emerald-100 active:scale-95 group-hover:bg-emerald-500"
-                      >
-                        <Zap size={18} fill="currentColor" /> Re-sync Link
-                      </button>
+                      <div className="flex flex-col gap-3">
+                        <button 
+                          onClick={() => requestGPS()}
+                          className="w-full bg-[#00D09C] text-white py-5 rounded-[2.5rem] font-black text-xs uppercase tracking-[0.3em] flex items-center justify-center gap-3 transition-all shadow-xl shadow-emerald-100 active:scale-95 group-hover:bg-emerald-500"
+                        >
+                          <Zap size={18} fill="currentColor" /> Re-sync Link
+                        </button>
+                        
+                        {/* Fallback for no-GPS devices */}
+                        {error && (
+                          <button 
+                            onClick={() => requestGPS(false, true)}
+                            className="w-full bg-white text-gray-400 py-4 rounded-[2.5rem] font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 border border-gray-100 active:scale-95"
+                          >
+                            <Locate size={14} /> Use Demo Location
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
                </div>
@@ -411,6 +488,12 @@ const MapScreen: React.FC = () => {
           </div>
         </div>
       </div>
+      <style>{`
+        @keyframes shimmer {
+          0% { transform: translateX(-100%); }
+          100% { transform: translateX(100%); }
+        }
+      `}</style>
     </div>
   );
 };

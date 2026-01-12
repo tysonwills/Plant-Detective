@@ -94,8 +94,11 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, stats, onLogout, on
         </div>
 
         <button 
-          onClick={onShowTerms}
-          className="w-full bg-white p-5 rounded-3xl shadow-sm border border-gray-100 flex items-center justify-between group active:scale-[0.98] transition-all"
+          onClick={(e) => {
+            e.preventDefault();
+            onShowTerms();
+          }}
+          className="w-full bg-white p-5 rounded-3xl shadow-sm border border-gray-100 flex items-center justify-between group active:scale-[0.98] transition-all cursor-pointer"
         >
           <div className="flex items-center gap-4">
             <div className="bg-blue-50 p-3 rounded-2xl text-blue-500 group-hover:scale-110 transition-transform">

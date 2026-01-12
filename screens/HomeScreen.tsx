@@ -179,35 +179,65 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate, onSearch, onAddToGa
         </div>
       ) : (
         <div className="animate-in fade-in duration-500">
-          {/* RECENT SEARCHES REMOVED */}
-
-          {/* SCANNER CARD */}
+          
+          {/* PROMINENT SCANNER CARD */}
           <div className="mb-12">
-            <button onClick={handleScanInteraction} className="w-full bg-white rounded-[3.5rem] p-8 text-left relative overflow-hidden shadow-[0_25px_60px_-15px_rgba(0,208,156,0.2)] border-[3px] border-[#00D09C] group active:scale-[0.98] transition-all">
-              <div className="absolute -top-24 -right-24 w-64 h-64 bg-emerald-100/30 rounded-full blur-[60px] pointer-events-none"></div>
-              <div className="flex flex-col gap-8 relative z-10">
+            <button onClick={handleScanInteraction} className="w-full bg-white rounded-[3.5rem] p-8 text-left relative overflow-hidden shadow-[0_30px_80px_-20px_rgba(0,208,156,0.3)] border-[4px] border-[#00D09C] group active:scale-[0.98] transition-all">
+              
+              {/* Background glow effects */}
+              <div className="absolute -top-32 -right-32 w-80 h-80 bg-emerald-100/40 rounded-full blur-[80px] pointer-events-none animate-pulse"></div>
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-[#00D09C]/5 rounded-full blur-[40px] pointer-events-none group-hover:bg-[#00D09C]/10 transition-colors"></div>
+
+              <div className="flex flex-col gap-10 relative z-10">
                 <div className="flex justify-between items-center">
                   {!isSubscribed ? (
                     <div className="bg-amber-100/50 text-amber-600 px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-[0.2em] flex items-center gap-2 border border-amber-200 shadow-sm"><Crown size={12} fill="currentColor" /> PRO LAB</div>
                   ) : (
-                    <div className="bg-emerald-50 text-[#00D09C] px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-[0.2em] flex items-center gap-2 border border-emerald-100 shadow-sm"><Activity size={12} /> SYSTEM LIVE</div>
+                    <div className="bg-emerald-50 text-[#00D09C] px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-[0.2em] flex items-center gap-2 border border-emerald-100 shadow-sm"><Activity size={12} /> SYSTEM READY</div>
                   )}
                   <div className="text-gray-300 group-hover:text-emerald-300 transition-colors"><Cpu size={20} /></div>
                 </div>
-                <div className="relative w-full aspect-square max-w-[180px] mx-auto flex items-center justify-center">
-                  <div className="absolute inset-0 border-2 border-dashed border-emerald-200 rounded-full animate-[spin_12s_linear_infinite]"></div>
-                  <div className="absolute -inset-4 border border-emerald-100 rounded-full"></div>
-                  <div className="w-40 h-40 bg-gradient-to-br from-emerald-50 to-white rounded-full flex items-center justify-center relative border border-emerald-50 shadow-inner">
-                    <div className="bg-white p-6 rounded-[2.5rem] shadow-xl relative ring-4 ring-[#00D09C]/5 border border-gray-100 flex items-center justify-center">
-                      <Camera size={56} className="text-[#00D09C] transition-transform group-hover:scale-110 duration-700" />
+
+                <div className="relative w-full aspect-square max-w-[220px] mx-auto flex items-center justify-center">
+                  {/* Rotating Rings */}
+                  <div className="absolute inset-0 border-2 border-dashed border-[#00D09C]/30 rounded-full animate-[spin_10s_linear_infinite]"></div>
+                  <div className="absolute inset-4 border border-[#00D09C]/20 rounded-full animate-[spin_15s_linear_infinite_reverse]"></div>
+                  
+                  {/* Pulse Ring */}
+                  <div className="absolute inset-0 border-[3px] border-[#00D09C]/10 rounded-full animate-ping opacity-20"></div>
+
+                  {/* Core Lens */}
+                  <div className="w-48 h-48 bg-gradient-to-br from-emerald-50 to-white rounded-full flex items-center justify-center relative border-2 border-emerald-100 shadow-[inset_0_4px_20px_rgba(0,0,0,0.05)] overflow-hidden">
+                    {/* Scanning Beam Animation */}
+                    <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-transparent via-[#00D09C]/10 to-transparent animate-[scan_3s_ease-in-out_infinite] z-0"></div>
+                    <div className="absolute top-0 left-0 w-full h-[2px] bg-[#00D09C]/40 shadow-[0_0_15px_#00D09C] animate-[scan_3s_ease-in-out_infinite] z-0"></div>
+
+                    {/* Icon Container */}
+                    <div className="bg-white p-8 rounded-[3rem] shadow-2xl relative ring-8 ring-[#00D09C]/5 border border-gray-100 flex items-center justify-center z-10 group-hover:scale-105 transition-transform duration-500">
+                      <Camera size={64} className="text-[#00D09C] drop-shadow-sm" strokeWidth={1.5} />
                     </div>
                   </div>
+
+                  {/* Tech Markers */}
+                  <div className="absolute -right-4 top-1/2 -translate-y-1/2 flex flex-col gap-1">
+                     <div className="w-1.5 h-1.5 bg-[#00D09C] rounded-full animate-pulse"></div>
+                     <div className="w-1.5 h-1.5 bg-[#00D09C]/40 rounded-full"></div>
+                     <div className="w-1.5 h-1.5 bg-[#00D09C]/20 rounded-full"></div>
+                  </div>
+                  <div className="absolute -left-4 top-1/2 -translate-y-1/2 flex flex-col gap-1">
+                     <div className="w-1.5 h-1.5 bg-[#00D09C] rounded-full animate-pulse"></div>
+                     <div className="w-1.5 h-1.5 bg-[#00D09C]/40 rounded-full"></div>
+                     <div className="w-1.5 h-1.5 bg-[#00D09C]/20 rounded-full"></div>
+                  </div>
                 </div>
+
                 <div className="text-center">
-                  <h2 className="text-3xl font-black text-gray-900 tracking-tighter mb-2 leading-none uppercase italic">Plant Identification</h2>
-                  <p className="text-gray-400 text-[10px] font-black uppercase tracking-[0.2em] mb-8">Execute Bio-Metric Analysis</p>
-                  <div className="w-full py-5 rounded-[2.5rem] bg-[#00D09C] text-white font-black text-xs uppercase tracking-[0.3em] flex items-center justify-center gap-3 shadow-lg shadow-emerald-100 group-hover:shadow-emerald-200">
-                    Initiate Scan <ChevronRight size={18} strokeWidth={4} className="group-hover:translate-x-2 transition-transform" />
+                  <h2 className="text-4xl font-black text-gray-900 tracking-tighter mb-2 leading-none uppercase italic">Tap to Identify</h2>
+                  <p className="text-gray-400 text-[10px] font-black uppercase tracking-[0.2em] mb-8">AI-Powered Specimen Analysis</p>
+                  
+                  <div className="w-full py-6 rounded-[2.5rem] bg-[#00D09C] text-white font-black text-sm uppercase tracking-[0.3em] flex items-center justify-center gap-3 shadow-xl shadow-emerald-200 group-hover:shadow-emerald-300 group-hover:translate-y-[-2px] transition-all relative overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
+                    Activate Lens <ChevronRight size={18} strokeWidth={4} />
                   </div>
                 </div>
               </div>
@@ -330,6 +360,15 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate, onSearch, onAddToGa
 
         </div>
       )}
+      
+      <style>{`
+        @keyframes scan {
+          0%, 100% { transform: translateY(-50px); opacity: 0; }
+          20% { opacity: 1; }
+          50% { transform: translateY(50px); opacity: 1; }
+          80% { opacity: 1; }
+        }
+      `}</style>
     </div>
   );
 };

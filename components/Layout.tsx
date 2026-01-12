@@ -1,5 +1,5 @@
 
-import React, { useRef } from 'react';
+import React, { useRef, useEffect } from 'react';
 import { Home, Heart, User, Camera, Leaf, Crown, MessageSquare, Sprout, Stethoscope, Dog, Search } from 'lucide-react';
 
 interface LayoutProps {
@@ -16,10 +16,12 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, onCa
   const mainContentRef = useRef<HTMLElement>(null);
   const hideNav = ['upsell', 'terms'].includes(activeTab);
 
+  // Scroll to top whenever the active tab changes
+  useEffect(() => {
+    mainContentRef.current?.scrollTo({ top: 0, behavior: 'auto' });
+  }, [activeTab]);
+
   const handleTabClick = (tab: string) => {
-    if (tab === 'home' && activeTab === 'home') {
-      mainContentRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
-    }
     setActiveTab(tab);
   };
 
