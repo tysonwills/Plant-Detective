@@ -3,7 +3,7 @@ import React from 'react';
 import { 
   ChevronLeft, ShieldAlert, CheckCircle2, AlertTriangle, Activity, Pill, History, Share2, Info, 
   Settings2, Microscope, ArrowRight, ClipboardCheck, Sparkles, Zap, ShieldCheck, 
-  Droplets, Scissors, Shovel, Wind, Sun, Sparkle, FlaskConical 
+  Droplets, Scissors, Shovel, Wind, Sun, Sparkle, FlaskConical, Plus 
 } from 'lucide-react';
 import { DiagnosticResult } from '../types';
 
@@ -161,64 +161,65 @@ const DiagnosisResultScreen: React.FC<DiagnosisResultScreenProps> = ({ result, o
               </div>
             </div>
 
-            {/* THE REMEDY: RE-STYLED TREATMENT PROTOCOL */}
-            <div className="bg-gray-900 rounded-[3.5rem] p-1 shadow-2xl shadow-gray-300 relative overflow-hidden group">
+            {/* THE REMEDY: RE-STYLED LIGHT TREATMENT PROTOCOL */}
+            <div className="bg-white rounded-[3.5rem] shadow-xl border-2 border-emerald-50 relative overflow-hidden group">
+               <div className="absolute inset-0 bg-gradient-to-b from-white to-emerald-50/30"></div>
                {/* Protocol Aesthetic Header */}
-               <div className="bg-emerald-500 rounded-t-[3.2rem] p-8 pt-10 pb-6 relative overflow-hidden">
-                  <div className="absolute top-0 right-0 p-6 opacity-20"><ClipboardCheck size={120} strokeWidth={1} /></div>
-                  <div className="flex items-center gap-5 relative z-10">
-                    <div className="bg-white text-emerald-600 p-4 rounded-[1.8rem] shadow-2xl">
+               <div className="p-8 pt-10 pb-6 relative z-10 border-b border-emerald-50">
+                  <div className="absolute top-0 right-0 p-6 opacity-5"><ClipboardCheck size={120} strokeWidth={1} /></div>
+                  <div className="flex items-center gap-5">
+                    <div className="bg-emerald-500 text-white p-4 rounded-[1.8rem] shadow-xl shadow-emerald-200">
                       <ShieldCheck size={32} strokeWidth={2.5} />
                     </div>
                     <div>
-                      <h3 className="text-white text-2xl font-black tracking-tight leading-none mb-1">Recovery Protocol</h3>
+                      <h3 className="text-gray-900 text-2xl font-black tracking-tight leading-none mb-1">Recovery Protocol</h3>
                       <div className="flex items-center gap-2">
-                         <span className="text-[10px] font-black text-emerald-100 uppercase tracking-[0.3em] opacity-80 animate-pulse">Execute Sequence</span>
+                         <span className="text-[10px] font-black text-[#00D09C] uppercase tracking-[0.3em] opacity-80">Execute Sequence</span>
                       </div>
                     </div>
                   </div>
                </div>
 
                {/* Step Modules Area */}
-               <div className="p-4 pt-6 pb-10 space-y-3">
+               <div className="p-4 pt-6 pb-10 space-y-3 relative z-10">
                   {recoverySteps.length > 0 ? (
                     recoverySteps.map((step, idx) => (
                       <div 
                         key={idx} 
-                        className="flex gap-5 items-center p-5 rounded-[2.2rem] bg-white/5 border border-white/10 hover:bg-white/10 transition-all duration-300 group/step animate-in fade-in slide-in-from-bottom-2"
+                        className="flex gap-5 items-center p-5 rounded-[2.2rem] bg-gray-50 border border-gray-100 hover:border-emerald-100 hover:bg-emerald-50/30 transition-all duration-300 group/step animate-in fade-in slide-in-from-bottom-2"
                         style={{ animationDelay: `${idx * 150}ms` }}
                       >
-                        <div className="flex-shrink-0 w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 group-hover/step:scale-110 group-hover/step:bg-emerald-500 group-hover/step:text-white transition-all duration-500 shadow-inner">
+                        <div className="flex-shrink-0 w-14 h-14 rounded-2xl bg-white border border-gray-100 flex items-center justify-center text-[#00D09C] group-hover/step:scale-110 group-hover/step:bg-[#00D09C] group-hover/step:text-white transition-all duration-500 shadow-sm">
                            {getStepIcon(step)}
                         </div>
                         <div className="flex-1">
                            <div className="flex items-center gap-2 mb-0.5">
-                              <span className="text-[8px] font-black text-emerald-500/60 uppercase tracking-[0.2em]">Step 0{idx + 1}</span>
-                              <div className="h-px flex-1 bg-white/5"></div>
+                              <span className="text-[8px] font-black text-gray-400 uppercase tracking-[0.2em] group-hover/step:text-[#00D09C]">Step 0{idx + 1}</span>
+                              <div className="h-px flex-1 bg-gray-200 group-hover/step:bg-emerald-100"></div>
                            </div>
-                           <p className="text-gray-300 font-bold leading-snug text-sm">
+                           <p className="text-gray-800 font-bold leading-snug text-sm">
                             {step.trim()}
                            </p>
                         </div>
                       </div>
                     ))
                   ) : (
-                    <div className="p-8 text-center bg-white/5 rounded-[2rem] border border-white/5">
-                      <p className="text-white font-bold leading-relaxed text-base italic opacity-90">
+                    <div className="p-8 text-center bg-gray-50 rounded-[2rem] border border-gray-100">
+                      <p className="text-gray-600 font-bold leading-relaxed text-base italic opacity-90">
                         {result.advice}
                       </p>
                     </div>
                   )}
                </div>
 
-               <div className="px-10 pb-8 pt-4 border-t border-white/5 flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-emerald-500">
+               <div className="px-10 pb-8 pt-4 border-t border-emerald-50 flex items-center justify-between relative z-10">
+                  <div className="flex items-center gap-2 text-[#00D09C]">
                      <div className="w-2 h-2 rounded-full bg-current animate-ping"></div>
                      <span className="text-[9px] font-black uppercase tracking-[0.4em]">Biosync Active</span>
                   </div>
                   <div className="flex items-center gap-3">
-                     {[1,2,3].map(dot => <div key={dot} className="w-1.5 h-1.5 bg-white/20 rounded-full"></div>)}
-                     <span className="text-[8px] font-bold text-gray-500 uppercase tracking-widest leading-none">v4.2.0</span>
+                     {[1,2,3].map(dot => <div key={dot} className="w-1.5 h-1.5 bg-gray-200 rounded-full"></div>)}
+                     <span className="text-[8px] font-bold text-gray-400 uppercase tracking-widest leading-none">v4.2.0</span>
                   </div>
                </div>
             </div>
@@ -243,11 +244,11 @@ const DiagnosisResultScreen: React.FC<DiagnosisResultScreenProps> = ({ result, o
                Discard
             </button>
             <button 
-              onClick={onBack}
-              className="flex-1 bg-gray-900 text-white py-6 rounded-[2.5rem] font-black text-sm uppercase tracking-widest active:scale-95 transition-transform flex items-center justify-center gap-3"
+              onClick={() => onSave && onSave()}
+              className="flex-1 bg-gray-900 text-white py-6 rounded-[2.5rem] font-black text-sm uppercase tracking-widest active:scale-95 transition-transform flex items-center justify-center gap-3 shadow-xl"
             >
-               Set Care Reminders
-               <ArrowRight size={18} />
+               <Plus size={18} />
+               Add to My Garden
             </button>
           </div>
         </div>

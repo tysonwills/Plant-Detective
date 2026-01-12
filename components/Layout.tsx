@@ -31,7 +31,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, onCa
             onClick={() => handleTabClick('home')}
             className="flex items-center gap-3 active:scale-95 transition-transform"
           >
-            <div className="bg-[#00D09C] w-10 h-10 rounded-xl flex items-center justify-center shadow-sm text-white relative">
+            <div className="bg-[#00D09C] w-10 h-10 rounded-xl flex items-center justify-center shadow-sm text-white relative border border-emerald-400/20">
               <Dog size={22} strokeWidth={2.5} />
               <Leaf size={10} strokeWidth={3} className="absolute -top-1 -right-1 text-emerald-900 fill-emerald-100" />
               <Search size={10} strokeWidth={3} className="absolute bottom-0.5 right-0.5 text-white" />
@@ -85,41 +85,42 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, onCa
         <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-50">
           <button 
             onClick={onCameraClick}
-            className="bg-[#00D09C] p-5 rounded-full shadow-lg shadow-[#00D09C44] text-white transform active:scale-95 transition-transform border-4 border-white"
+            className="bg-[#00D09C] p-5 rounded-full shadow-2xl shadow-emerald-900/40 text-white transform active:scale-95 transition-transform border-4 border-white group"
           >
-            <Camera size={28} />
+            <Camera size={28} className="group-hover:scale-110 transition-transform" />
           </button>
         </div>
       )}
 
-      {/* Bottom Nav Bar */}
+      {/* Bottom Nav Bar - Background color updated to match brand green #00D09C */}
       {activeTab !== 'upsell' && (
-        <nav className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white/90 backdrop-blur-lg border-t border-gray-100 px-4 py-3 flex justify-between items-center z-40 rounded-t-[2.5rem] shadow-[0_-10px_30px_rgba(0,0,0,0.02)]">
+        <nav className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-[#00D09C] border-t border-white/10 px-4 py-4 flex justify-between items-center z-40 rounded-t-[2.5rem] shadow-[0_-15px_40px_rgba(0,0,0,0.15)]">
           <TabItem 
-            icon={<Home size={20} />} 
+            icon={<Home size={22} />} 
             label="Home" 
             active={activeTab === 'home'} 
             onClick={() => handleTabClick('home')} 
           />
           <TabItem 
-            icon={<Leaf size={20} />} 
+            icon={<Leaf size={22} />} 
             label="Garden" 
             isPro={!isSubscribed}
             active={activeTab === 'my-plants'} 
             onClick={() => handleTabClick('my-plants')} 
           />
           
-          <div className="w-12" />
+          {/* Spacer for FAB */}
+          <div className="w-14" />
 
           <TabItem 
-            icon={<Stethoscope size={20} />} 
+            icon={<Stethoscope size={22} />} 
             label="Doctor" 
             isPro={!isSubscribed}
             active={activeTab === 'diagnose'} 
             onClick={() => handleTabClick('diagnose')} 
           />
           <TabItem 
-            icon={<MessageSquare size={20} />} 
+            icon={<MessageSquare size={22} />} 
             label="Ask Expert" 
             isPro={!isSubscribed}
             active={activeTab === 'chat'} 
@@ -134,17 +135,20 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, onCa
 const TabItem = ({ icon, label, active, onClick, isPro }: { icon: any, label: string, active: boolean, onClick: () => void, isPro?: boolean }) => (
   <button 
     onClick={onClick}
-    className={`flex flex-col items-center gap-1 transition-all duration-300 relative ${active ? 'text-[#00D09C] scale-110' : 'text-gray-500 hover:text-gray-700'}`}
+    className={`flex flex-col items-center gap-1.5 transition-all duration-300 relative ${active ? 'text-white scale-110' : 'text-white/60 hover:text-white/80'}`}
   >
     {isPro && (
-      <div className="absolute -top-1 -right-1 text-[#D4AF37]">
-        <Crown size={8} fill="currentColor" />
+      <div className="absolute -top-1 -right-1 text-white drop-shadow-sm">
+        <Crown size={10} fill="currentColor" />
       </div>
     )}
-    <div className={`${active ? 'bg-emerald-50 p-1 rounded-lg' : ''}`}>
+    <div className={`transition-all duration-300 ${active ? 'bg-white/20 p-2 rounded-2xl shadow-inner' : 'p-2'}`}>
       {icon}
     </div>
-    <span className={`text-[8px] font-black uppercase tracking-wider ${active ? 'opacity-100' : 'opacity-60'}`}>{label}</span>
+    <span className={`text-[8px] font-black uppercase tracking-widest leading-none ${active ? 'opacity-100 translate-y-0.5' : 'opacity-80'}`}>{label}</span>
+    {active && (
+      <div className="absolute -bottom-1 w-1 h-1 bg-white rounded-full animate-pulse"></div>
+    )}
   </button>
 );
 

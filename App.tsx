@@ -275,8 +275,16 @@ const App: React.FC = () => {
           setActiveTab('id-result');
           setSelectedPlantId(undefined);
           setIsSearchLoading(true);
+          
           const images = await getWikiImages(result.identification.scientificName, result.identification.genus);
           setWikiImages(images);
+
+          const similar = await Promise.all(result.similarPlants.map(async (p) => {
+            const thumb = await getWikiThumbnail(p.scientificName || p.name);
+            return { ...p, imageUrl: thumb || `https://picsum.photos/seed/${p.name}/400/600` };
+          }));
+          setIdResult(prev => prev ? ({ ...prev, similarPlants: similar }) : null);
+
           setIsSearchLoading(false);
           showInAppToast("Specimen identified", "success");
         });
@@ -307,6 +315,33 @@ const App: React.FC = () => {
     
     // Trigger the success pop-up
     setShowAddSuccess({ name: plant.name, image: newPlant.image });
+  };
+
+  const handleAddDiagnosisToGarden = () => {
+    if (!diagResult) return;
+    
+    const severityColor = diagResult.severity === 'Critical' ? 'text-rose-500 bg-rose-50' : 
+                          diagResult.severity === 'Warning' ? 'text-amber-500 bg-amber-50' : 
+                          'text-emerald-500 bg-emerald-50';
+
+    const newPlant = {
+      id: Date.now().toString(),
+      name: diagResult.plantName,
+      species: diagResult.plantName,
+      image: diagResult.imageUrl || 'https://images.unsplash.com/photo-1545239351-ef35f43d514b?q=80&w=400&h=600&auto=format&fit=crop',
+      status: diagResult.severity,
+      statusColor: severityColor,
+      lastWatered: 'Just added',
+      lastCare: {}, 
+      fullData: null, 
+      wikiImages: [] 
+    };
+    const updated = [newPlant, ...myPlants];
+    setMyPlants(updated);
+    localStorage.setItem('flora_garden', JSON.stringify(updated));
+    
+    // Trigger the success pop-up
+    setShowAddSuccess({ name: newPlant.name, image: newPlant.image });
   };
 
   const handleSaveReminder = (reminderData: Omit<Reminder, 'id'>) => {
@@ -557,7 +592,13 @@ const App: React.FC = () => {
             }}
           />
         )}
-        {activeTab === 'diag-result' && diagResult && <DiagnosisResultScreen result={diagResult} onBack={() => setActiveTab('diagnose')} />}
+        {activeTab === 'diag-result' && diagResult && (
+          <DiagnosisResultScreen 
+            result={diagResult} 
+            onBack={() => setActiveTab('diagnose')} 
+            onSave={handleAddDiagnosisToGarden} 
+          />
+        )}
         {activeTab === 'upsell' && <UpsellScreen onSubscribe={() => { const u = {...user, isSubscribed: true}; setUser(u); localStorage.setItem('flora_user', JSON.stringify(u)); setShowProSuccess(true); setActiveTab('home'); }} onBack={() => setActiveTab('home')} />}
       </div>
 

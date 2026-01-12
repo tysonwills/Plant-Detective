@@ -1,6 +1,6 @@
 
 import { GoogleGenAI, Type, Chat } from "@google/genai";
-import { IdentificationResponse, DiagnosticResult, GardenCenter } from "../types";
+import { IdentificationResponse, DiagnosticResult, GardenCenter, PlacementAnalysis } from "../types";
 
 const cleanJsonResponse = (text: string) => {
   return text.replace(/```json/g, "").replace(/```/g, "").trim();
@@ -192,6 +192,59 @@ export const diagnoseHealth = async (base64Image: string): Promise<Omit<Diagnost
   });
   const text = response.text;
   if (!text) throw new Error("Pathology scan failed.");
+  return JSON.parse(cleanJsonResponse(text));
+};
+
+export const analyzePlacement = async (base64Image: string, plantName: string, sensorLux?: number): Promise<PlacementAnalysis> => {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const response = await ai.models.generateContent({
+    model: "gemini-3-flash-preview",
+    contents: {
+      parts: [
+        { inlineData: { mimeType: "image/jpeg", data: base64Image } },
+        { text: `Role: Botanical Light & Placement Specialist.
+Target Plant: ${plantName}
+${sensorLux !== undefined ? `Digital Light Sensor Reading: ${sensorLux}% (scale 0-100)` : ''}
+
+Phase 1: Plant Requirements
+- Identify specific lighting needs for ${plantName} based on WFO standards.
+
+Phase 2: Environmental Analysis
+- Analyze the user-provided image of the plant's location.
+- Identify light sources, distance, and shadow sharpness.
+- **CRITICAL**: Use the Digital Light Sensor Reading as the primary truth for light intensity. 
+  - If Sensor is 5-35%, it is Low Light/Shade.
+  - If Sensor is 40-80%, it is Bright Indirect.
+  - If Sensor is >80%, it is Direct Sun.
+  - Match this against the plant's needs.
+
+Phase 3: The Verdict
+- Provide a "Light Score" (1-10).
+- STRICTLY assign one of these exact verdicts: 'Too Dark', 'Optimal', or 'Too Bright'.
+- Suggest the Best Position.
+
+Output valid JSON.` }
+      ]
+    },
+    config: {
+      responseMimeType: "application/json",
+      thinkingConfig: { thinkingBudget: 0 },
+      responseSchema: {
+        type: Type.OBJECT,
+        properties: {
+          plantName: { type: Type.STRING },
+          idealLight: { type: Type.STRING },
+          currentAssessment: { type: Type.STRING },
+          score: { type: Type.NUMBER },
+          verdict: { type: Type.STRING, enum: ["Too Dark", "Optimal", "Too Bright"] },
+          recommendation: { type: Type.STRING }
+        },
+        required: ["plantName", "idealLight", "currentAssessment", "score", "verdict", "recommendation"]
+      }
+    }
+  });
+  const text = response.text;
+  if (!text) throw new Error("Environmental analysis failed.");
   return JSON.parse(cleanJsonResponse(text));
 };
 

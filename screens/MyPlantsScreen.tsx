@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { Leaf, Droplets, Plus, Camera, Bell, BellOff, Calendar, ChevronRight, Trash2, X, AlertCircle, Search, History, CheckCircle2, FlaskConical, Scissors, Wind, Clock, Check, BarChart3, Activity, Sparkle, Shovel, Zap, HeartPulse, ShieldCheck, ShieldAlert, TrendingUp, TrendingDown, Info, BellRing } from 'lucide-react';
+import { Leaf, Droplets, Plus, Camera, Bell, BellOff, Calendar, ChevronRight, Trash2, X, AlertCircle, Search, History, CheckCircle2, FlaskConical, Scissors, Wind, Clock, Check, BarChart3, Activity, Sparkle, Shovel, Zap, HeartPulse, ShieldCheck, ShieldAlert, TrendingUp, TrendingDown, Info, BellRing, Sprout, SearchCode, Sparkles } from 'lucide-react';
 import { Reminder, DiagnosticResult } from '../types';
 
 interface MyPlantsScreenProps {
@@ -230,136 +230,175 @@ const MyPlantsScreen: React.FC<MyPlantsScreenProps> = ({
         </div>
       )}
 
-      {/* Plant Grid */}
-      <div className="flex flex-col gap-10">
-        {plants.map((plant) => {
-          const plantReminders = reminders.filter(r => r.plantId === plant.id);
-          const history = completions[plant.id] || [];
-          const health = getPlantHealthDetails(plant);
-          const isLogVisible = showLogId === plant.id;
-          
-          return (
-            <div 
-              key={plant.id} 
-              className="bg-white rounded-[3rem] overflow-hidden shadow-md border border-gray-100 flex flex-col group relative active:scale-[0.99] transition-all duration-300"
-              onClick={() => onPlantClick(plant)}
-            >
-              <div className="relative h-72 cursor-pointer overflow-hidden">
-                <img src={plant.image} alt={plant.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" />
-                
-                {/* Health Score Overlay */}
-                <div className="absolute top-6 left-6 right-6 flex justify-between items-start pointer-events-none">
-                  <div className={`px-4 py-2 rounded-full text-[9px] font-black uppercase tracking-wider ${plant.statusColor} backdrop-blur-md bg-opacity-90 shadow-lg border border-white/20 pointer-events-auto`}>
-                    {plant.status}
+      {/* Plant Grid or Empty State */}
+      {plants.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-20 px-8 text-center animate-in fade-in zoom-in-95 duration-700">
+           <div className="relative mb-12">
+              {/* Decorative background for the empty state icon */}
+              <div className="absolute inset-0 bg-emerald-50 rounded-[4rem] blur-3xl opacity-60"></div>
+              <div className="relative w-48 h-48 bg-white rounded-[4rem] shadow-2xl border-4 border-emerald-50 flex items-center justify-center">
+                 <div className="absolute top-4 right-4">
+                    <Sparkles className="text-amber-400 animate-pulse" size={32} />
+                 </div>
+                 <div className="absolute bottom-6 left-6 opacity-20 rotate-12">
+                    <Droplets className="text-[#00D09C]" size={40} />
+                 </div>
+                 <Sprout className="text-[#00D09C] animate-[float_4s_ease-in-out_infinite]" size={80} strokeWidth={1.5} />
+              </div>
+           </div>
+
+           <h3 className="text-3xl font-black text-gray-900 tracking-tighter mb-4 leading-none uppercase italic">Your Garden is Empty</h3>
+           <p className="text-gray-400 text-xs font-bold leading-relaxed mb-10 px-4">
+              Unlock the full potential of PlantHound. Identify a specimen or search for one to start tracking its biological care requirements and health vibrancy.
+           </p>
+
+           <div className="w-full flex flex-col gap-4">
+              <button 
+                onClick={onAddClick}
+                className="w-full bg-[#00D09C] text-white py-7 rounded-[3rem] font-black text-lg uppercase tracking-[0.2em] shadow-2xl shadow-emerald-100 active:scale-95 transition-all flex items-center justify-center gap-4 border-b-8 border-emerald-700/20"
+              >
+                 <Plus size={28} strokeWidth={4} />
+                 Add Your First Specimen
+              </button>
+              
+              <div className="flex items-center gap-2 justify-center mt-4">
+                 <div className="w-1.5 h-1.5 bg-emerald-300 rounded-full"></div>
+                 <span className="text-[9px] font-black text-gray-300 uppercase tracking-widest">System Ready for Input</span>
+                 <div className="w-1.5 h-1.5 bg-emerald-300 rounded-full"></div>
+              </div>
+           </div>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-10">
+          {plants.map((plant) => {
+            const plantReminders = reminders.filter(r => r.plantId === plant.id);
+            const history = completions[plant.id] || [];
+            const health = getPlantHealthDetails(plant);
+            const isLogVisible = showLogId === plant.id;
+            
+            return (
+              <div 
+                key={plant.id} 
+                className="bg-white rounded-[3rem] overflow-hidden shadow-md border border-gray-100 flex flex-col group relative active:scale-[0.99] transition-all duration-300"
+                onClick={() => onPlantClick(plant)}
+              >
+                <div className="relative h-72 cursor-pointer overflow-hidden">
+                  <img src={plant.image} alt={plant.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" />
+                  
+                  {/* Health Score Overlay */}
+                  <div className="absolute top-6 left-6 right-6 flex justify-between items-start pointer-events-none">
+                    <div className={`px-4 py-2 rounded-full text-[9px] font-black uppercase tracking-wider ${plant.statusColor} backdrop-blur-md bg-opacity-90 shadow-lg border border-white/20 pointer-events-auto`}>
+                      {plant.status}
+                    </div>
+
+                    <div className="relative pointer-events-auto">
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowHealthTooltip(showHealthTooltip === plant.id ? null : plant.id);
+                        }}
+                        className={`w-20 h-20 rounded-[2.2rem] backdrop-blur-xl border-4 shadow-2xl flex flex-col items-center justify-center transition-all duration-500 hover:scale-110 active:scale-95 ${getScoreBg(health.score)} ${health.score >= 85 ? 'border-emerald-200' : health.score >= 60 ? 'border-amber-200' : 'border-rose-200'}`}
+                      >
+                        <div className="relative">
+                          <span className={`text-2xl font-black tracking-tighter leading-none ${getScoreColor(health.score)}`}>{health.score}%</span>
+                          {health.trend === 'stable' ? <TrendingUp size={12} className="text-emerald-500 absolute -top-4 -right-3" /> : <TrendingDown size={12} className="text-rose-500 absolute -top-4 -right-3" />}
+                        </div>
+                        <span className={`text-[7px] font-black uppercase tracking-widest mt-1 opacity-60 ${getScoreColor(health.score)}`}>Bio-Vibrancy</span>
+                      </button>
+
+                      {/* Health Insights Tooltip */}
+                      {showHealthTooltip === plant.id && (
+                        <div className="absolute top-full mt-4 right-0 w-64 bg-white/95 backdrop-blur-xl rounded-[2rem] p-6 shadow-2xl border border-gray-100 z-50 animate-in zoom-in-95 duration-200">
+                          <div className="flex items-center justify-between mb-4">
+                            <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-900">Health Breakdown</h4>
+                            <button onClick={() => setShowHealthTooltip(null)}><X size={14} className="text-gray-300" /></button>
+                          </div>
+                          <div className="space-y-3">
+                            <HealthFactor label="Maintenance" value={100 - health.deductions.maintenance} color="emerald" />
+                            <HealthFactor label="Adherence" value={100 - health.deductions.adherence} color="blue" />
+                            <HealthFactor label="Pathology" value={100 - health.deductions.pathology} color="amber" />
+                          </div>
+                          <div className="mt-4 pt-4 border-t border-gray-100">
+                             <p className="text-[9px] font-bold text-gray-500 leading-relaxed italic">
+                               {health.score >= 85 ? "Optimal cellular function. Biological processes are synchronized." : 
+                                health.score >= 60 ? "Maintenance drift detected. Adherence optimization recommended." : 
+                                "Critical physiological stress. Immediate clinical intervention required."}
+                             </p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
-                  <div className="relative pointer-events-auto">
+                  <div className="absolute bottom-0 inset-x-0 h-32 bg-gradient-to-t from-black/70 to-transparent pointer-events-none"></div>
+                  <div className="absolute bottom-8 left-8 pointer-events-none">
+                    <h3 className="font-black text-white text-3xl tracking-tight leading-none mb-1">{plant.name}</h3>
+                    <p className="text-emerald-300 text-[11px] font-black italic tracking-widest uppercase opacity-90">{plant.species}</p>
+                  </div>
+                </div>
+
+                <div className="p-8 flex-1 flex flex-col bg-white">
+                  <div className="flex items-center justify-between mb-8">
+                    <div className="flex items-center gap-3">
+                      <div className="bg-gray-50 p-2.5 rounded-xl text-[#00D09C]">
+                        <BarChart3 size={20} />
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 leading-none mb-1">Activity Tracking</p>
+                        <p className="text-sm font-black text-gray-900 leading-none">14-Day Cycle</p>
+                      </div>
+                    </div>
                     <button 
                       onClick={(e) => {
                         e.stopPropagation();
-                        setShowHealthTooltip(showHealthTooltip === plant.id ? null : plant.id);
+                        setShowLogId(isLogVisible ? null : plant.id);
                       }}
-                      className={`w-20 h-20 rounded-[2.2rem] backdrop-blur-xl border-4 shadow-2xl flex flex-col items-center justify-center transition-all duration-500 hover:scale-110 active:scale-95 ${getScoreBg(health.score)} ${health.score >= 85 ? 'border-emerald-200' : health.score >= 60 ? 'border-amber-200' : 'border-rose-200'}`}
+                      className={`px-5 py-2.5 rounded-2xl border font-black text-[9px] uppercase tracking-wider transition-all ${isLogVisible ? 'bg-[#00D09C] text-white border-[#00D09C]' : 'bg-white text-gray-400 border-gray-100 hover:border-emerald-100'}`}
                     >
-                      <div className="relative">
-                        <span className={`text-2xl font-black tracking-tighter leading-none ${getScoreColor(health.score)}`}>{health.score}%</span>
-                        {health.trend === 'stable' ? <TrendingUp size={12} className="text-emerald-500 absolute -top-4 -right-3" /> : <TrendingDown size={12} className="text-rose-500 absolute -top-4 -right-3" />}
-                      </div>
-                      <span className={`text-[7px] font-black uppercase tracking-widest mt-1 opacity-60 ${getScoreColor(health.score)}`}>Bio-Vibrancy</span>
+                      {isLogVisible ? 'Close Log' : 'History'}
                     </button>
+                  </div>
 
-                    {/* Health Insights Tooltip */}
-                    {showHealthTooltip === plant.id && (
-                      <div className="absolute top-full mt-4 right-0 w-64 bg-white/95 backdrop-blur-xl rounded-[2rem] p-6 shadow-2xl border border-gray-100 z-50 animate-in zoom-in-95 duration-200">
-                        <div className="flex items-center justify-between mb-4">
-                          <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-900">Health Breakdown</h4>
-                          <button onClick={() => setShowHealthTooltip(null)}><X size={14} className="text-gray-300" /></button>
-                        </div>
-                        <div className="space-y-3">
-                          <HealthFactor label="Maintenance" value={100 - health.deductions.maintenance} color="emerald" />
-                          <HealthFactor label="Adherence" value={100 - health.deductions.adherence} color="blue" />
-                          <HealthFactor label="Pathology" value={100 - health.deductions.pathology} color="amber" />
-                        </div>
-                        <div className="mt-4 pt-4 border-t border-gray-100">
-                           <p className="text-[9px] font-bold text-gray-500 leading-relaxed italic">
-                             {health.score >= 85 ? "Optimal cellular function. Biological processes are synchronized." : 
-                              health.score >= 60 ? "Maintenance drift detected. Adherence optimization recommended." : 
-                              "Critical physiological stress. Immediate clinical intervention required."}
-                           </p>
-                        </div>
-                      </div>
-                    )}
+                  <div className="flex flex-wrap gap-2.5 mb-8">
+                    {plantReminders.map((task) => {
+                      const isDue = task.lastNotificationDate !== todayStr;
+                      return (
+                        <button
+                          key={task.id}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onCompleteTask?.(plant.id, task.type);
+                          }}
+                          className={`flex items-center gap-3 px-6 py-4 rounded-2xl border transition-all active:scale-95 shadow-sm ${getTaskLightColor(task.type)} ${isDue ? 'ring-2 ring-current shadow-lg' : 'opacity-80 border-gray-100'}`}
+                        >
+                          {React.cloneElement(getTaskIcon(task.type) as React.ReactElement<any>, { size: 16, strokeWidth: 3 })}
+                          <span className="text-[10px] font-black uppercase tracking-widest">{task.type}</span>
+                          {isDue && <div className="w-2 h-2 rounded-full bg-current animate-ping"></div>}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <div className="mt-auto flex items-center justify-between border-t border-gray-50 pt-8">
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); onRemovePlant(plant.id); }}
+                      className="p-3 bg-gray-50 rounded-2xl text-gray-300 hover:text-rose-500 hover:bg-rose-50 transition-all"
+                    >
+                      <Trash2 size={22} />
+                    </button>
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); onManageReminders(plant.id, plant.name); }}
+                      className="bg-[#EFFFFB] text-[#00D09C] px-8 py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest border border-emerald-100 hover:bg-[#00D09C] hover:text-white transition-all active:scale-95 flex items-center gap-3"
+                    >
+                      <Plus size={18} strokeWidth={4} /> Add Reminder
+                    </button>
                   </div>
                 </div>
-
-                <div className="absolute bottom-0 inset-x-0 h-32 bg-gradient-to-t from-black/70 to-transparent pointer-events-none"></div>
-                <div className="absolute bottom-8 left-8 pointer-events-none">
-                  <h3 className="font-black text-white text-3xl tracking-tight leading-none mb-1">{plant.name}</h3>
-                  <p className="text-emerald-300 text-[11px] font-black italic tracking-widest uppercase opacity-90">{plant.species}</p>
-                </div>
               </div>
-
-              <div className="p-8 flex-1 flex flex-col bg-white">
-                <div className="flex items-center justify-between mb-8">
-                  <div className="flex items-center gap-3">
-                    <div className="bg-gray-50 p-2.5 rounded-xl text-[#00D09C]">
-                      <BarChart3 size={20} />
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 leading-none mb-1">Activity Tracking</p>
-                      <p className="text-sm font-black text-gray-900 leading-none">14-Day Cycle</p>
-                    </div>
-                  </div>
-                  <button 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setShowLogId(isLogVisible ? null : plant.id);
-                    }}
-                    className={`px-5 py-2.5 rounded-2xl border font-black text-[9px] uppercase tracking-wider transition-all ${isLogVisible ? 'bg-[#00D09C] text-white border-[#00D09C]' : 'bg-white text-gray-400 border-gray-100 hover:border-emerald-100'}`}
-                  >
-                    {isLogVisible ? 'Close Log' : 'History'}
-                  </button>
-                </div>
-
-                <div className="flex flex-wrap gap-2.5 mb-8">
-                  {plantReminders.map((task) => {
-                    const isDue = task.lastNotificationDate !== todayStr;
-                    return (
-                      <button
-                        key={task.id}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onCompleteTask?.(plant.id, task.type);
-                        }}
-                        className={`flex items-center gap-3 px-6 py-4 rounded-2xl border transition-all active:scale-95 shadow-sm ${getTaskLightColor(task.type)} ${isDue ? 'ring-2 ring-current shadow-lg' : 'opacity-80 border-gray-100'}`}
-                      >
-                        {React.cloneElement(getTaskIcon(task.type) as React.ReactElement<any>, { size: 16, strokeWidth: 3 })}
-                        <span className="text-[10px] font-black uppercase tracking-widest">{task.type}</span>
-                        {isDue && <div className="w-2 h-2 rounded-full bg-current animate-ping"></div>}
-                      </button>
-                    );
-                  })}
-                </div>
-
-                <div className="mt-auto flex items-center justify-between border-t border-gray-50 pt-8">
-                  <button 
-                    onClick={(e) => { e.stopPropagation(); onRemovePlant(plant.id); }}
-                    className="p-3 bg-gray-50 rounded-2xl text-gray-300 hover:text-rose-500 hover:bg-rose-50 transition-all"
-                  >
-                    <Trash2 size={22} />
-                  </button>
-                  <button 
-                    onClick={(e) => { e.stopPropagation(); onManageReminders(plant.id, plant.name); }}
-                    className="bg-[#EFFFFB] text-[#00D09C] px-8 py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest border border-emerald-100 hover:bg-[#00D09C] hover:text-white transition-all active:scale-95 flex items-center gap-3"
-                  >
-                    <Plus size={18} strokeWidth={4} /> Add Reminder
-                  </button>
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
 
       {plants.length > 0 && (
         <button 
@@ -372,6 +411,13 @@ const MyPlantsScreen: React.FC<MyPlantsScreenProps> = ({
           Add Specimen
         </button>
       )}
+
+      <style>{`
+        @keyframes float {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-20px); }
+        }
+      `}</style>
     </div>
   );
 };

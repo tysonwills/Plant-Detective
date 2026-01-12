@@ -90,6 +90,15 @@ export interface DiagnosticResult {
   imageUrl?: string;
 }
 
+export interface PlacementAnalysis {
+  plantName: string;
+  idealLight: string;
+  currentAssessment: string;
+  score: number;
+  verdict: 'Too Dark' | 'Optimal' | 'Too Bright';
+  recommendation: string;
+}
+
 export interface WikiImage {
   imageUrl: string;
   sourcePageUrl: string;
