@@ -536,11 +536,38 @@ const App: React.FC = () => {
             completions={completions}
             onAddClick={() => fileInputRef.current?.click()} 
             onManageReminders={(id, name) => setReminderPlant({id, name})} 
-            onPlantClick={p => { 
-              setIdResult(p.fullData); 
-              setWikiImages(p.wikiImages || []); 
+            onPlantClick={async (p) => { 
               setSelectedPlantId(p.id);
-              setActiveTab('id-result'); 
+              setWikiImages(p.wikiImages || []);
+              
+              if (p.fullData) {
+                 setIdResult(p.fullData);
+                 setActiveTab('id-result');
+              } else {
+                 // Fallback for plants without full identification data (e.g. manual/diag ones)
+                 setProcessingType('search');
+                 setCurrentSearchName(p.name);
+                 executeWithKeySafety(async () => {
+                    setIsSearchLoading(true);
+                    setActiveTab('id-result');
+                    try {
+                       // We fetch fresh data
+                       const result = await getPlantInfoByName(p.name);
+                       setIdResult(result);
+                       
+                       // We might need images
+                       if (!p.wikiImages || p.wikiImages.length === 0) {
+                          const imgs = await getWikiImages(result.identification.scientificName, result.identification.genus);
+                          setWikiImages(imgs);
+                       }
+                    } catch (e) {
+                       console.error(e);
+                       showInAppToast("Could not load details", "error");
+                    } finally {
+                       setIsSearchLoading(false);
+                    }
+                 });
+              }
             }} 
             onRemovePlant={handleRemovePlant}
             onCompleteTask={handleCompleteTask}
@@ -580,7 +607,14 @@ const App: React.FC = () => {
             plantId={selectedPlantId}
             reminders={reminders}
             onAddToGarden={(n, s, i) => addPlantToGarden({ name: n, species: s, image: i, fullData: idResult, wikiImages })}
-            onBack={() => setActiveTab('home')}
+            onBack={() => {
+               if (selectedPlantId) {
+                  setActiveTab('my-plants');
+                  setSelectedPlantId(undefined);
+               } else {
+                  setActiveTab('home');
+               }
+            }}
             onSearchSimilar={(plant) => handlePlantSearch(plant.name)}
             onFindStores={() => handleNavigate('stores')}
             onAddReminder={() => {
@@ -590,6 +624,7 @@ const App: React.FC = () => {
             onCompleteTask={(type) => {
               if (selectedPlantId) handleCompleteTask(selectedPlantId, type);
             }}
+            hideAddButton={!!selectedPlantId}
           />
         )}
         {activeTab === 'diag-result' && diagResult && (
